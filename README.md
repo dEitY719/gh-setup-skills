@@ -36,6 +36,9 @@ same kind of job — a one-shot pass over a repo, not a per-commit habit.
 - `docs-bootstrap` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/docs-bootstrap.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/docs-bootstrap-usage.html) (a directory path to a scaffolded docs/ tree)
 - `add-ai-metrics` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/add-ai-metrics.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/add-ai-metrics-usage.html) (issue/PR numbers to metrics footers)
 
+Each page is generated from a Markdown source under
+[`docs/skill-guides/`](docs/skill-guides) and [`docs/skill-output/`](docs/skill-output).
+
 ## Requirements
 
 | Skill | Needs |

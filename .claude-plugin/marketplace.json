@@ -1,4 +1,5 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "gh-setup-skills",
   "description": "One-time GitHub repo initialization skills — label SSOT sync, Projects v2 kanban board, ai-metrics footer backfill, and a kind-split docs/ tree",
   "owner": {
@@ -10,6 +11,7 @@
       "name": "gh-setup",
       "description": "Stand up a new GitHub repo in one pass: sync its labels to the 10-label SSOT, create and wire the Projects v2 kanban board, scaffold the standard docs/ tree, and backfill the ai-metrics footer onto cards that predate automatic capture",
       "version": "0.1.0",
+      "homepage": "https://github.com/dEitY719/gh-setup-skills",
       "source": "./",
       "author": {
         "name": "dEitY719",
