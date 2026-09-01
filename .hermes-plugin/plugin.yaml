@@ -1,0 +1,4 @@
+name: gh-setup
+version: 0.1.0
+description: Skills for one-time GitHub repo initialization — labels, kanban board, docs tree, ai-metrics backfill
+author: dEitY719

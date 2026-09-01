@@ -1,0 +1,42 @@
+{
+  "name": "gh-setup",
+  "version": "0.1.0",
+  "description": "One-time GitHub repo initialization: label SSOT sync, Projects v2 kanban board, docs/ tree scaffold, and ai-metrics footer backfill.",
+  "author": {
+    "name": "dEitY719",
+    "url": "https://github.com/dEitY719"
+  },
+  "homepage": "https://github.com/dEitY719/gh-setup-skills",
+  "repository": "https://github.com/dEitY719/gh-setup-skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "plugin",
+    "marketplace",
+    "github",
+    "labels",
+    "projects",
+    "bootstrap"
+  ],
+  "skills": "./skills/",
+  "hooks": {},
+  "interface": {
+    "displayName": "GH Setup",
+    "shortDescription": "One-time GitHub repo initialization",
+    "longDescription": "gh-setup bundles the four skills you run once, when a repo is new, rather than on every commit. label-bootstrap force-syncs the 10-label SSOT plus its three alias renames and two pipeline-state labels, and deletes nothing unless --prune is passed. kanban-bootstrap creates the Projects v2 board, links the repo, replaces the Status options with the six-column workflow, and delegates its label step to label-bootstrap. docs-bootstrap scaffolds the eight-leaf kind-split docs/ tree with a .gitkeep per leaf and one policy README, dry-run by default. add-ai-metrics retrofits the ai-metrics footer onto Issues and PRs created before capture was automatic, idempotently and byte-identically outside the footer block. All four need an authenticated gh CLI; kanban-bootstrap additionally needs the project token scope.",
+    "developerName": "dEitY719",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Bootstrap this new repo's labels and kanban board.",
+      "Scaffold the standard docs tree here."
+    ],
+    "websiteURL": "https://github.com/dEitY719/gh-setup-skills",
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

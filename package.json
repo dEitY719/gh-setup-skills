@@ -1,0 +1,21 @@
+{
+  "name": "gh-setup-skills",
+  "version": "0.1.0",
+  "description": "Skills for one-time GitHub repo initialization — label SSOT sync, Projects v2 kanban board, docs/ tree scaffold, ai-metrics footer backfill",
+  "type": "module",
+  "main": ".opencode/plugins/gh-setup.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dEitY719/gh-setup-skills.git"
+  },
+  "keywords": [
+    "skills",
+    "plugin",
+    "marketplace",
+    "github",
+    "labels",
+    "projects",
+    "bootstrap"
+  ]
+}

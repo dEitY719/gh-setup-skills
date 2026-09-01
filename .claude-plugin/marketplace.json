@@ -1,0 +1,20 @@
+{
+  "name": "gh-setup-skills",
+  "description": "One-time GitHub repo initialization skills — label SSOT sync, Projects v2 kanban board, ai-metrics footer backfill, and a kind-split docs/ tree",
+  "owner": {
+    "name": "dEitY719",
+    "url": "https://github.com/dEitY719"
+  },
+  "plugins": [
+    {
+      "name": "gh-setup",
+      "description": "Stand up a new GitHub repo in one pass: sync its labels to the 10-label SSOT, create and wire the Projects v2 kanban board, scaffold the standard docs/ tree, and backfill the ai-metrics footer onto cards that predate automatic capture",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "dEitY719",
+        "url": "https://github.com/dEitY719"
+      }
+    }
+  ]
+}

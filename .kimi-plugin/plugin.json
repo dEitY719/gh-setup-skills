@@ -1,0 +1,34 @@
+{
+  "name": "gh-setup",
+  "version": "0.1.0",
+  "description": "One-time GitHub repo initialization: label SSOT sync, Projects v2 kanban board, docs/ tree scaffold, and ai-metrics footer backfill.",
+  "author": {
+    "name": "dEitY719",
+    "url": "https://github.com/dEitY719"
+  },
+  "homepage": "https://github.com/dEitY719/gh-setup-skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "plugin",
+    "marketplace",
+    "github",
+    "labels",
+    "projects",
+    "bootstrap"
+  ],
+  "skills": "./skills/",
+  "skillInstructions": "Kimi Code tool mapping for the gh-setup skills.\n\nThe authoritative mapping is not in this repo. It lives in the sibling repo `dEitY719/harness-skills` at `references/kimi-tools.md` (https://github.com/dEitY719/harness-skills/blob/main/references/kimi-tools.md) and is the single source of truth for every repo in the `dEitY719/*-skills` family; do not copy it here. Summary:\n\n- Read / Write / Edit / Bash / Grep / Glob keep their exposed Kimi names. Search contents with `Grep`; match paths with `Glob`. Every skill here is a thin wrapper around a `lib/*.sh` script or the `gh` CLI - run them with `Bash` and pass their output through verbatim; do not reimplement them.\n- \"Ask the user\" -> `AskUserQuestion`. Two places need it: `gh-setup:kanban-bootstrap` asks once whether to hide the reserved columns when the repo looks personal (never infer this from the collaborator count), and `gh-setup:add-ai-metrics` asks `Continue with N cards? [y/N]:` before touching more than 100 cards.\n- `TodoWrite` -> Kimi Code's `TodoList` tool.\n- \"Dispatch a subagent\" -> `Agent` with `subagent_type: \"coder\"` (implementation) or `\"explore\"` (read-only). Never pass `general-purpose`.\n- No skill here uses Claude Code's `Skill` tool or `WebFetch`. `gh-setup:kanban-bootstrap` reaches its sibling by running `skills/label-bootstrap/lib/label-bootstrap.sh` directly, which is a plain shell call and needs no skill-invocation tool.\n- All four need an authenticated `gh` CLI. `gh-setup:kanban-bootstrap` additionally needs the `project` token scope (`gh auth refresh -h <host> -s project`) and carries `GH_HOST` on every call, because `--repo` alone names no server.\n\nSafety contracts. These are part of the skills, not advice:\n\n- `gh-setup:label-bootstrap` force-syncs the color and description of every SSOT label, and never deletes a label unless `--prune` is passed explicitly. `--dry-run` must make zero POST/PATCH/DELETE calls. The 10 labels, 3 alias renames, and 2 pipeline-state labels live only in `skills/label-bootstrap/references/gh-labels.md` - never hardcode a second copy.\n- `gh-setup:kanban-bootstrap` always targets `origin` and never silently falls back to another remote. Never echo a token, a collaborator list, or a project ID to stdout. Never run the smoke test without an explicit `--with-smoke-test`.\n- `gh-setup:docs-bootstrap` defaults to `--dry-run` and writes only on `--apply`. It never migrates a populated `docs/` and never overwrites `docs/README.md` without `--force`.\n- `gh-setup:add-ai-metrics` is a backfill and is idempotent: a card already carrying an `<!-- ai-metrics -->` block is skipped, and bytes outside that block are never modified. Always pass `--repo`. Per-card failures are logged and the loop continues.\n",
+  "interface": {
+    "displayName": "GH Setup",
+    "shortDescription": "One-time GitHub repo initialization",
+    "longDescription": "gh-setup bundles the four repo-initialization skills: label-bootstrap, kanban-bootstrap, docs-bootstrap, and add-ai-metrics.",
+    "developerName": "dEitY719",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/dEitY719/gh-setup-skills"
+  }
+}
