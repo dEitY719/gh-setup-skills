@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kanban-bootstrap — 스킬 설명서</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ===== THEME TOKENS =====
+   Light is the default. Dark applies either from the OS
+   (prefers-color-scheme) or from an explicit .theme-dark class. */
+:root {
+  --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F5F5F4; --surface-hover: #EFEEEC;
+  --border: rgba(15,23,42,0.10); --border-strong: rgba(15,23,42,0.18);
+  --text: #0f172a; --text-secondary: #5b6472; --text-faint: #8b93a1;
+  --accent: #2563eb; --accent-soft: rgba(37,99,235,0.10);
+  --violet: #7c3aed; --violet-soft: rgba(124,58,237,0.10);
+  --positive: #059669; --positive-soft: rgba(5,150,105,0.10);
+  --negative: #d92d51; --negative-soft: rgba(217,45,81,0.10);
+  --warning: #b45309; --warning-soft: rgba(180,83,9,0.10);
+  --code-bg: #0f172a; --code-text: #e2e8f0; --code-dim: #94a3b8;
+  --shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    --bg: #0B0C0E; --surface: #141619; --surface-2: #1A1D21; --surface-hover: #22262B;
+    --border: rgba(255,255,255,0.09); --border-strong: rgba(255,255,255,0.18);
+    --text: #E9EBEE; --text-secondary: #A0A7B2; --text-faint: #767E8A;
+    --accent: #6ea8ff; --accent-soft: rgba(110,168,255,0.14);
+    --violet: #b18cff; --violet-soft: rgba(177,140,255,0.14);
+    --positive: #34d399; --positive-soft: rgba(52,211,153,0.14);
+    --negative: #ff7a92; --negative-soft: rgba(255,122,146,0.14);
+    --warning: #fbbf24; --warning-soft: rgba(251,191,36,0.14);
+    --code-bg: #05070A; --code-text: #dbe3ee; --code-dim: #7d8896;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+html.theme-dark {
+  --bg: #0B0C0E; --surface: #141619; --surface-2: #1A1D21; --surface-hover: #22262B;
+  --border: rgba(255,255,255,0.09); --border-strong: rgba(255,255,255,0.18);
+  --text: #E9EBEE; --text-secondary: #A0A7B2; --text-faint: #767E8A;
+  --accent: #6ea8ff; --accent-soft: rgba(110,168,255,0.14);
+  --violet: #b18cff; --violet-soft: rgba(177,140,255,0.14);
+  --positive: #34d399; --positive-soft: rgba(52,211,153,0.14);
+  --negative: #ff7a92; --negative-soft: rgba(255,122,146,0.14);
+  --warning: #fbbf24; --warning-soft: rgba(251,191,36,0.14);
+  --code-bg: #05070A; --code-text: #dbe3ee; --code-dim: #7d8896;
+  --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+}
+html.theme-light {
+  --bg: #FAFAF9; --surface: #FFFFFF; --surface-2: #F5F5F4; --surface-hover: #EFEEEC;
+  --border: rgba(15,23,42,0.10); --border-strong: rgba(15,23,42,0.18);
+  --text: #0f172a; --text-secondary: #5b6472; --text-faint: #8b93a1;
+  --accent: #2563eb; --accent-soft: rgba(37,99,235,0.10);
+  --violet: #7c3aed; --violet-soft: rgba(124,58,237,0.10);
+  --positive: #059669; --positive-soft: rgba(5,150,105,0.10);
+  --negative: #d92d51; --negative-soft: rgba(217,45,81,0.10);
+  --warning: #b45309; --warning-soft: rgba(180,83,9,0.10);
+  --code-bg: #0f172a; --code-text: #e2e8f0; --code-dim: #94a3b8;
+  --shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Apple SD Gothic Neo",
+               "Noto Sans KR", "Malgun Gothic", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 16px; line-height: 1.65; letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
+  scrollbar-gutter: stable;
+}
+code, pre, .mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", "D2Coding", monospace;
+  font-variant-ligatures: none;
+}
+h1, h2, h3, h4 { color: var(--text); letter-spacing: -0.028em; line-height: 1.18; text-wrap: balance; }
+a { color: var(--accent); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ===== HEADER ===== */
+.masthead { border-bottom: 1px solid var(--border); background: var(--surface); }
+.masthead-inner { padding: 64px 0 52px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--text-secondary); margin-bottom: 20px;
+}
+.eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+h1 { font-size: clamp(2.1rem, 5.4vw, 3.2rem); font-weight: 750; margin-bottom: 6px; }
+h1 .mono { font-weight: 700; }
+.subtitle { font-size: 1.02rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 28px; }
+.lede {
+  max-width: 720px; font-size: 1.12rem; line-height: 1.7;
+  border-left: 3px solid var(--accent); padding: 4px 0 4px 20px;
+}
+.lede strong { font-weight: 650; }
+.tagrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.tag {
+  font-size: 0.8rem; font-weight: 550; padding: 5px 11px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary);
+}
+.tag.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
+/* ===== SECTIONS ===== */
+section { padding: 60px 0 4px; }
+section:last-of-type { padding-bottom: 72px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 26px; flex-wrap: wrap; }
+.sec-num {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--accent); background: var(--accent-soft);
+  padding: 4px 9px; border-radius: 6px; line-height: 1;
+}
+h2 { font-size: clamp(1.4rem, 3vw, 1.75rem); font-weight: 680; }
+.sec-note { font-size: 0.93rem; color: var(--text-secondary); margin: -12px 0 24px; max-width: 720px; }
+
+/* ===== CARD ===== */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 22px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+.grid { display: grid; gap: 14px; }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(288px, 1fr)); }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+.artifact .k {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 10px; display: block;
+}
+.artifact h3 { font-size: 1.05rem; font-weight: 640; margin-bottom: 8px; }
+.artifact p { font-size: 0.93rem; color: var(--text-secondary); }
+.artifact.optional { border-style: dashed; }
+.badge-opt {
+  display: inline-block; font-size: 0.72rem; font-weight: 650; padding: 2px 8px;
+  border-radius: 5px; background: var(--warning-soft); color: var(--warning); margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* ===== STATUS PIPELINE ===== */
+.pipeline {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.col {
+  position: relative; border-radius: 9px; padding: 16px 12px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  text-align: center;
+}
+.col .idx { font-size: 0.7rem; font-weight: 700; color: var(--text-faint); display: block; margin-bottom: 8px; }
+.col .nm { font-size: 0.92rem; font-weight: 620; line-height: 1.3; }
+.col .bar { height: 3px; border-radius: 2px; margin: 0 auto 12px; width: 26px; background: var(--accent); }
+.col:nth-child(1) .bar { background: var(--text-faint); }
+.col:nth-child(2) .bar { background: var(--accent); }
+.col:nth-child(3) .bar { background: var(--violet); }
+.col:nth-child(4) .bar { background: var(--violet); }
+.col:nth-child(5) .bar { background: var(--positive); }
+.col:nth-child(6) .bar { background: var(--positive); }
+.col.hideable { border-style: dashed; border-color: var(--border-strong); }
+.col .hint {
+  display: block; margin-top: 8px; font-size: 0.7rem; font-weight: 600;
+  color: var(--warning);
+}
+.pipe-legend {
+  display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.pipe-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-strong); }
+.swatch.dash { background: transparent; border-style: dashed; }
+.swatch.done { background: var(--positive-soft); border-color: var(--positive); }
+
+/* ===== TABLES ===== */
+.tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 0.94rem; min-width: 520px; }
+th, td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th {
+  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-faint); background: var(--surface-2); white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-hover); }
+td code, li code, p code, .lede code {
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 1px 6px; border-radius: 5px; font-size: 0.87em; white-space: nowrap;
+}
+.verdict { font-weight: 680; white-space: nowrap; }
+.verdict.yes { color: var(--positive); }
+.verdict.no { color: var(--negative); }
+.verdict::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 8px; vertical-align: 1px; background: currentColor;
+}
+.opt-name { white-space: nowrap; }
+
+/* ===== FILTER ===== */
+.filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.filterbar input {
+  flex: 1 1 260px; min-width: 200px;
+  font-family: inherit; font-size: 0.92rem; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 14px; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.filterbar input:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.filterbar .count { font-size: 0.85rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+tr.is-hidden { display: none; }
+.noresult td { color: var(--text-faint); font-style: italic; }
+
+/* ===== CODE BLOCK ===== */
+.codeblock { position: relative; margin-bottom: 14px; }
+.codeblock .lbl {
+  font-size: 0.76rem; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 7px; display: block;
+}
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 88px 16px 18px; overflow-x: auto;
+  font-size: 0.9rem; line-height: 1.6;
+}
+pre .dim { color: var(--code-dim); }
+.copybtn {
+  position: absolute; right: 10px; bottom: 10px;
+  font-family: inherit; font-size: 0.76rem; font-weight: 620;
+  color: var(--code-dim); background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 7px;
+  padding: 5px 11px; cursor: pointer; transition: all 0.15s;
+}
+.copybtn:hover { color: #fff; background: rgba(255,255,255,0.16); }
+.copybtn.done { color: #7ee2b8; border-color: rgba(126,226,184,0.4); }
+
+/* ===== STEPS ===== */
+.steps { counter-reset: s; display: grid; gap: 10px; }
+.step {
+  display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; padding: 16px 18px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.step:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+.step .n {
+  counter-increment: s; width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 0.9rem; font-weight: 720; font-variant-numeric: tabular-nums;
+}
+.step .n::before { content: counter(s); }
+.step h3 { font-size: 0.99rem; font-weight: 620; margin-bottom: 3px; }
+.step p { font-size: 0.9rem; color: var(--text-secondary); }
+.step.gate { border-left: 3px solid var(--warning); }
+.step.gate .n { background: var(--warning-soft); color: var(--warning); }
+.step.deleg { border-left: 3px solid var(--violet); }
+.step.deleg .n { background: var(--violet-soft); color: var(--violet); }
+
+/* ===== RULES ===== */
+.rule {
+  border-left: 3px solid var(--negative); background: var(--surface);
+  border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 11px 11px 0; padding: 18px 20px;
+  transition: box-shadow 0.18s;
+}
+.rule:hover { box-shadow: var(--shadow); }
+.rule.note { border-left-color: var(--accent); }
+.rule h3 { font-size: 0.98rem; font-weight: 660; margin-bottom: 6px; }
+.rule p { font-size: 0.92rem; color: var(--text-secondary); }
+.rule .kicker {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--negative); display: block; margin-bottom: 7px;
+}
+.rule.note .kicker { color: var(--accent); }
+
+/* ===== FOOTER ===== */
+footer {
+  border-top: 1px solid var(--border); padding: 28px 0 44px;
+  font-size: 0.85rem; color: var(--text-faint);
+}
+footer .src { font-size: 0.82rem; }
+
+/* ===== MENU ===== */
+.viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+.viz-menu-toggle {
+  width: 42px; height: 42px; border-radius: 11px;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  color: var(--text); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; box-shadow: var(--shadow);
+  transition: background 0.18s;
+}
+.viz-menu-toggle:hover { background: var(--surface-hover); }
+.viz-menu-dropdown {
+  position: absolute; top: 50px; right: 0; min-width: 196px;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: 11px; padding: 6px; box-shadow: var(--shadow);
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity 0.18s, transform 0.18s, visibility 0.18s;
+}
+.viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+.viz-menu-dropdown button {
+  width: 100%; padding: 9px 12px; border: none; border-radius: 8px;
+  background: transparent; color: var(--text); font-size: 0.88rem; font-weight: 550;
+  font-family: inherit; cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 10px; transition: background 0.14s;
+}
+.viz-menu-dropdown button:hover { background: var(--surface-hover); }
+.viz-menu-dropdown svg { flex: none; color: var(--text-secondary); }
+
+/* ===== A11Y ===== */
+.skip-to-content {
+  position: absolute; top: -60px; left: 8px; z-index: 10000;
+  background: var(--accent); color: #fff; padding: 9px 14px;
+  border-radius: 7px; text-decoration: none; font-weight: 600;
+}
+.skip-to-content:focus { top: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ===== ANIMATION ===== */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+.animate { animation: fadeInUp 0.5s ease-out both; }
+.animate.delay-1 { animation-delay: 0.06s; }
+.animate.delay-2 { animation-delay: 0.12s; }
+.animate.delay-3 { animation-delay: 0.18s; }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 860px) {
+  .pipeline { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .masthead-inner { padding: 44px 0 36px; }
+  section { padding: 44px 0 4px; }
+  .pipeline { grid-template-columns: 1fr; }
+  pre { padding-right: 18px; padding-bottom: 46px; }
+}
+
+/* ===== PRINT ===== */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .viz-menu, .copybtn, .filterbar, .skip-to-content { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .card, .step, .rule, .tablewrap, .pipeline { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  pre { background: #f4f4f5 !important; color: #111 !important; padding-right: 18px; }
+  pre .dim { color: #666 !important; }
+  section { padding: 24px 0 0; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+@page { margin: 0.85in; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+<div class="viz-menu">
+  <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-expanded="false" id="menuToggle">
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+      <line x1="3" y1="5.5" x2="17" y2="5.5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14.5" x2="17" y2="14.5"/>
+    </svg>
+  </button>
+  <div class="viz-menu-dropdown" id="vizMenuDropdown">
+    <button onclick="cycleTheme()" id="themeBtn">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" id="themeIcon">
+        <circle cx="10" cy="10" r="4"/><line x1="10" y1="1.5" x2="10" y2="3.5"/><line x1="10" y1="16.5" x2="10" y2="18.5"/><line x1="1.5" y1="10" x2="3.5" y2="10"/><line x1="16.5" y1="10" x2="18.5" y2="10"/><line x1="4" y1="4" x2="5.4" y2="5.4"/><line x1="14.6" y1="14.6" x2="16" y2="16"/><line x1="16" y1="4" x2="14.6" y2="5.4"/><line x1="5.4" y1="14.6" x2="4" y2="16"/>
+      </svg>
+      <span id="themeLabel">테마 전환</span>
+    </button>
+    <button onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5.5 7.5V2.5h9v5"/><rect x="2.5" y="7.5" width="15" height="7" rx="1.5"/><path d="M5.5 12.5h9v5h-9z"/>
+      </svg>
+      <span>인쇄 / PDF</span>
+    </button>
+  </div>
+</div>
+
+<main id="main-content">
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div class="eyebrow animate"><span class="dot"></span>gh-setup 플러그인 · 스킬 설명서</div>
+    <h1 class="animate delay-1"><span class="mono">kanban-bootstrap</span></h1>
+    <p class="subtitle animate delay-1">GitHub Projects v2 칸반 보드 부트스트랩</p>
+    <p class="lede animate delay-2">
+      repo 하나에 대해 <strong>GitHub Projects v2 칸반 보드</strong>를 만들고, repo 를 연결하고,
+      Status 필드를 <strong>6컬럼 워크플로</strong>로 교체한 보드를 산출한다.
+    </p>
+    <div class="tagrow animate delay-3">
+      <span class="tag accent">부트스트랩 전용</span>
+      <span class="tag"><code>origin</code> 만 대상</span>
+      <span class="tag">6컬럼 Status</span>
+      <span class="tag"><code>--dry-run</code> 지원</span>
+      <span class="tag">라벨 단계는 위임</span>
+    </div>
+  </div>
+</header>
+
+<!-- 1. 산출물 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">01</span><h2>무엇을 만들어 내는가</h2></div>
+  <div class="grid grid-3">
+    <article class="card artifact">
+      <span class="k">보드</span>
+      <h3>Projects v2 보드 1개</h3>
+      <p>기본 제목은 repo 이름.</p>
+    </article>
+    <article class="card artifact">
+      <span class="k">연결</span>
+      <h3>보드에 링크된 대상 repo</h3>
+      <p>보드와 저장소를 연결한다.</p>
+    </article>
+    <article class="card artifact">
+      <span class="k">필드</span>
+      <h3>6컬럼 Status 필드</h3>
+      <p>Backlog / In progress / In review / Approved / Ready / Done.</p>
+    </article>
+    <article class="card artifact">
+      <span class="k">자동화</span>
+      <h3>Done 자동 아카이브 창</h3>
+      <p>기본 <code>2d</code>.</p>
+    </article>
+    <article class="card artifact optional">
+      <span class="k">원격 파일</span>
+      <h3>PR 템플릿<span class="badge-opt">생략 가능</span></h3>
+      <p>원격 <code>.github/pull_request_template.md</code>. <code>--skip-pr-template</code> 로 생략.</p>
+    </article>
+    <article class="card artifact">
+      <span class="k">출력</span>
+      <h3>잔여 워크플로 체크리스트</h3>
+      <p>사람이 UI 에서 직접 켜야 하는 항목을 출력한다.</p>
+    </article>
+  </div>
+</section>
+
+<!-- 2. Status 워크플로 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">02</span><h2>6컬럼 Status 워크플로</h2></div>
+  <p class="sec-note">기존 Status 옵션을 이 6개로 교체한다. 점선 두 컬럼은 <code>--hide-columns</code> 를 줬을 때 1인 repo 용으로 숨김 안내가 붙는 컬럼이다.</p>
+  <div class="pipeline">
+    <div class="col"><span class="idx">01</span><span class="bar"></span><span class="nm">Backlog</span></div>
+    <div class="col"><span class="idx">02</span><span class="bar"></span><span class="nm">In progress</span></div>
+    <div class="col"><span class="idx">03</span><span class="bar"></span><span class="nm">In review</span></div>
+    <div class="col hideable"><span class="idx">04</span><span class="bar"></span><span class="nm">Approved</span><span class="hint">숨김 대상</span></div>
+    <div class="col hideable"><span class="idx">05</span><span class="bar"></span><span class="nm">Ready</span><span class="hint">숨김 대상</span></div>
+    <div class="col"><span class="idx">06</span><span class="bar"></span><span class="nm">Done</span></div>
+  </div>
+  <div class="pipe-legend">
+    <span><span class="swatch dash"></span>점선 = <code>--hide-columns</code> 안내 대상 (Approved / Ready)</span>
+    <span><span class="swatch done"></span>Done = 자동 아카이브 창 기본 <code>2d</code></span>
+  </div>
+</section>
+
+<!-- 3. 언제 쓰는가 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">03</span><h2>언제 쓰고 언제 안 쓰는가</h2></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>상황</th><th>이 스킬</th><th>대신 쓸 것</th></tr></thead>
+      <tbody>
+        <tr><td>새 repo 에 칸반 보드를 세운다</td><td class="verdict yes">예</td><td>&mdash;</td></tr>
+        <tr><td>라벨만 맞추면 된다</td><td class="verdict no">아니오</td><td><code>label-bootstrap</code></td></tr>
+        <tr><td><code>docs/</code> 골격만 필요하다</td><td class="verdict no">아니오</td><td><code>docs-bootstrap</code></td></tr>
+        <tr><td>이미 있는 보드의 컬럼을 손본다</td><td class="verdict no">아니오</td><td>GitHub UI (이 스킬은 부트스트랩 전용)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid grid-2" style="margin-top:14px">
+    <div class="rule note">
+      <span class="kicker">위임</span>
+      <h3>라벨 단계는 자체 구현이 아니다</h3>
+      <p><code>label-bootstrap</code> 의 스크립트를 그대로 호출한다. <code>--no-bootstrap-labels</code> 로 생략 가능.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 호출 형식 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">04</span><h2>호출 형식</h2></div>
+  <div class="grid grid-2" style="margin-bottom:22px">
+    <div class="codeblock">
+      <span class="lbl">스킬로 호출</span>
+      <pre id="code-skill">/gh-setup:kanban-bootstrap <span class="dim">[--owner &lt;login&gt;] [--repo &lt;name&gt;] [options]</span></pre>
+      <button class="copybtn" onclick="copyCode('code-skill', this)">복사</button>
+    </div>
+    <div class="codeblock">
+      <span class="lbl">셸에서 직접</span>
+      <pre id="code-sh">bash skills/kanban-bootstrap/lib/setup.sh <span class="dim">[--owner &lt;login&gt;] [--repo &lt;name&gt;] [options]</span></pre>
+      <button class="copybtn" onclick="copyCode('code-sh', this)">복사</button>
+    </div>
+  </div>
+
+  <div class="filterbar">
+    <input id="optFilter" type="search" placeholder="인자 필터 — 예: dry, label, repo" aria-label="인자 필터" autocomplete="off">
+    <span class="count" id="optCount">9개 인자</span>
+  </div>
+  <div class="tablewrap">
+    <table id="optTable">
+      <thead><tr><th>인자</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td class="opt-name"><code>--owner &lt;login&gt;</code></td><td>사용자 또는 조직. 생략 시 <code>gh repo view</code> 로 현재 repo 소유자.</td></tr>
+        <tr><td class="opt-name"><code>--repo &lt;name&gt;</code></td><td>저장소 이름. 생략 시 현재 repo.</td></tr>
+        <tr><td class="opt-name"><code>--title &lt;board-title&gt;</code></td><td>보드 제목. 기본은 repo 이름.</td></tr>
+        <tr><td class="opt-name"><code>--auto-archive-window &lt;dur&gt;</code></td><td>Done 자동 아카이브 필터 접미사. 기본 <code>2d</code>.</td></tr>
+        <tr><td class="opt-name"><code>--hide-columns</code></td><td>1인 repo 용 Approved / Ready 숨김 안내를 추가한다.</td></tr>
+        <tr><td class="opt-name"><code>--dry-run</code></td><td>변경 없이 계획만 출력.</td></tr>
+        <tr><td class="opt-name"><code>--skip-pr-template</code></td><td>원격 PR 템플릿 생성/확인을 건너뛴다.</td></tr>
+        <tr><td class="opt-name"><code>--no-bootstrap-labels</code></td><td>5단계 라벨 동기화를 건너뛴다.</td></tr>
+        <tr><td class="opt-name"><code>-h</code>, <code>--help</code></td><td>도움말 출력 후 종료. API 호출 없음.</td></tr>
+        <tr class="noresult is-hidden"><td colspan="2">일치하는 인자가 없다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 5. 동작 단계 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">05</span><h2>동작 단계</h2></div>
+  <div class="steps">
+    <div class="step"><span class="n"></span><div><h3>스킬 디렉터리 확인</h3><p>스킬 디렉터리를 찾고 <code>START_TS</code> 를 기록한다.</p></div></div>
+    <div class="step gate"><span class="n"></span><div><h3>사전 조건 점검</h3><p><code>gh</code>, <code>jq</code>, 호스트, <code>project</code> 토큰 스코프. 빠진 게 있으면 <code>gh auth refresh -h &lt;host&gt; -s project</code> 힌트를 내고 중단한다.</p></div></div>
+    <div class="step"><span class="n"></span><div><h3>대상 repo 결정</h3><p>언제나 <code>origin</code> 이며 원격 선택을 묻지 않는다.</p></div></div>
+    <div class="step gate"><span class="n"></span><div><h3>옵션 파싱</h3><p><code>--hide-columns</code> 가 없고 개인 repo 로 보이면 한 줄로 한 번만 물어본다.</p></div></div>
+    <div class="step deleg"><span class="n"></span><div><h3>라벨 부트스트랩</h3><p>형제 스킬 스크립트에 위임.</p></div></div>
+    <div class="step gate"><span class="n"></span><div><h3><code>--dry-run</code> 디스패치</h3><p>실패하면 실제 실행으로 넘어가지 않는다.</p></div></div>
+    <div class="step"><span class="n"></span><div><h3>실제 실행</h3><p>프로젝트 생성, repo 링크, Status 필드 교체, PR 템플릿 확인.</p></div></div>
+    <div class="step"><span class="n"></span><div><h3>보고</h3><p>UI 체크리스트와 최종 보고 출력.</p></div></div>
+  </div>
+</section>
+
+<!-- 6. 주의사항 -->
+<section class="wrap" data-reveal>
+  <div class="sec-head"><span class="sec-num">06</span><h2>주의사항 / 제약</h2></div>
+  <div class="grid grid-2">
+    <div class="rule">
+      <span class="kicker">대상 고정</span>
+      <h3><code>origin</code> 만 대상으로 한다</h3>
+      <p>다른 원격으로 조용히 넘어가지 않는다.</p>
+    </div>
+    <div class="rule">
+      <span class="kicker">프라이버시</span>
+      <h3>개인 repo 판정은 추론하지 않는다</h3>
+      <p>협업자 수로 유추하면 그 자체가 정보 노출이므로, 컬럼 숨김 여부는 반드시 사용자에게 한 번 물어본다.</p>
+    </div>
+    <div class="rule">
+      <span class="kicker">출력 금지</span>
+      <h3>토큰 · 협업자 목록 · 프로젝트 ID</h3>
+      <p>stdout 에 찍지 않는다.</p>
+    </div>
+    <div class="rule">
+      <span class="kicker">기본 비실행</span>
+      <h3>스모크 테스트는 <code>--with-smoke-test</code> 없이는 실행하지 않는다</h3>
+      <p>도움말 성격의 명령 문자열만 출력한다.</p>
+    </div>
+    <div class="rule note">
+      <span class="kicker">호출 규약</span>
+      <h3>모든 <code>gh</code> 호출은 <code>GH_HOST</code> 를 함께 넘긴다</h3>
+      <p><code>--repo</code> 만으로는 어느 서버인지 지정되지 않기 때문이다.</p>
+    </div>
+    <div class="rule note">
+      <span class="kicker">워크플로 설정</span>
+      <h3>"Pull request linked to issue" 는 비활성화가 정답</h3>
+      <p>Issue 카드는 In review 컬럼을 거치지 않는다.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="src">출처: <code>docs/skill-guides/kanban-bootstrap.md</code> — gh-setup 플러그인 스킬 설명서. 이 페이지의 모든 내용은 해당 문서에서만 가져왔다.</p>
+  </div>
+</footer>
+
+<script>
+// === Menu ===
+function toggleMenu() {
+  var d = document.getElementById('vizMenuDropdown');
+  var t = document.getElementById('menuToggle');
+  var open = d.classList.toggle('open');
+  t.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.viz-menu')) {
+    document.getElementById('vizMenuDropdown').classList.remove('open');
+    document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
+  }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    document.getElementById('vizMenuDropdown').classList.remove('open');
+    document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
+  }
+});
+
+// === Theme ===
+// No class at all => follow the OS via prefers-color-scheme (CSS handles it).
+// A stored choice pins .theme-light / .theme-dark.
+var ICON_SUN = '<circle cx="10" cy="10" r="4"/><line x1="10" y1="1.5" x2="10" y2="3.5"/><line x1="10" y1="16.5" x2="10" y2="18.5"/><line x1="1.5" y1="10" x2="3.5" y2="10"/><line x1="16.5" y1="10" x2="18.5" y2="10"/><line x1="4" y1="4" x2="5.4" y2="5.4"/><line x1="14.6" y1="14.6" x2="16" y2="16"/><line x1="16" y1="4" x2="14.6" y2="5.4"/><line x1="5.4" y1="14.6" x2="4" y2="16"/>';
+var ICON_MOON = '<path d="M16.5 11.6A7 7 0 0 1 8.4 3.5a7 7 0 1 0 8.1 8.1z"/>';
+var currentTheme = null;
+try { currentTheme = localStorage.getItem('viz-theme'); } catch (e) { currentTheme = null; }
+function osIsDark() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function applyTheme(t) {
+  document.documentElement.className = t ? 'theme-' + t : '';
+  var effective = t || (osIsDark() ? 'dark' : 'light');
+  var icon = document.getElementById('themeIcon');
+  var label = document.getElementById('themeLabel');
+  if (icon) icon.innerHTML = effective === 'dark' ? ICON_MOON : ICON_SUN;
+  if (label) label.textContent = effective === 'dark' ? '라이트 모드로' : '다크 모드로';
+  currentTheme = t;
+  try { if (t) { localStorage.setItem('viz-theme', t); } } catch (e) {}
+}
+function cycleTheme() {
+  var effective = currentTheme || (osIsDark() ? 'dark' : 'light');
+  applyTheme(effective === 'dark' ? 'light' : 'dark');
+}
+applyTheme(currentTheme);
+if (window.matchMedia) {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var onMq = function () { if (!currentTheme) applyTheme(null); };
+  if (mq.addEventListener) { mq.addEventListener('change', onMq); }
+  else if (mq.addListener) { mq.addListener(onMq); }
+}
+
+// === Copy code ===
+function copyCode(id, btn) {
+  var text = document.getElementById(id).innerText;
+  var done = function () {
+    btn.textContent = '복사됨';
+    btn.classList.add('done');
+    setTimeout(function () { btn.textContent = '복사'; btn.classList.remove('done'); }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () {});
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+}
+
+// === Option filter ===
+var optInput = document.getElementById('optFilter');
+if (optInput) {
+  var optRows = Array.prototype.slice.call(
+    document.querySelectorAll('#optTable tbody tr:not(.noresult)'));
+  var noRow = document.querySelector('#optTable tbody tr.noresult');
+  var optCount = document.getElementById('optCount');
+  optInput.addEventListener('input', function () {
+    var q = optInput.value.trim().toLowerCase();
+    var shown = 0;
+    optRows.forEach(function (r) {
+      var hit = !q || r.innerText.toLowerCase().indexOf(q) !== -1;
+      r.classList.toggle('is-hidden', !hit);
+      if (hit) shown++;
+    });
+    noRow.classList.toggle('is-hidden', shown !== 0);
+    optCount.textContent = shown + '개 인자';
+  });
+}
+
+// === Scroll reveal ===
+document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); });
+if ('IntersectionObserver' in window) {
+  var ro = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); ro.unobserve(e.target); }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(function (el) { ro.observe(el); });
+} else {
+  document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('visible'); });
+}
+</script>
+</body>
+</html>

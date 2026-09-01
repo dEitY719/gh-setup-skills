@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko" class="theme-auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>docs-bootstrap 사용 결과</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ===== THEME TOKENS =====
+     기본값은 라이트. prefers-color-scheme: dark 이면 자동 다크.
+     메뉴의 테마 버튼이 html 에 .theme-light / .theme-dark 를 걸면 그 선택이 우선. */
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4; --surface-sunken: #F1F0EE;
+    --border: rgba(0,0,0,0.10); --border-strong: rgba(0,0,0,0.18);
+    --text: #17181C; --text-secondary: #5C6068;
+    --accent: #2563EB; --accent-soft: rgba(37,99,235,0.10);
+    --accent-secondary: #7C3AED;
+    --positive: #047857; --positive-soft: rgba(4,120,113,0.10);
+    --negative: #E11D48; --warning: #B45309;
+    --console-bg: #16181D; --console-text: #E4E6EB; --console-dim: #8A9099;
+    --console-border: rgba(255,255,255,0.10);
+    --shadow: 0 1px 2px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0C0D10; --surface: #16181D; --surface-hover: #1D2027; --surface-sunken: #101216;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.20);
+      --text: #E8EAED; --text-secondary: #969BA5;
+      --accent: #6BA0FF; --accent-soft: rgba(107,160,255,0.14);
+      --accent-secondary: #A78BFA;
+      --positive: #34D399; --positive-soft: rgba(52,211,153,0.14);
+      --negative: #FB7185; --warning: #FBBF24;
+      --console-bg: #08090B; --console-text: #E4E6EB; --console-dim: #7C828C;
+      --console-border: rgba(255,255,255,0.08);
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  html.theme-light {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4; --surface-sunken: #F1F0EE;
+    --border: rgba(0,0,0,0.10); --border-strong: rgba(0,0,0,0.18);
+    --text: #17181C; --text-secondary: #5C6068;
+    --accent: #2563EB; --accent-soft: rgba(37,99,235,0.10);
+    --accent-secondary: #7C3AED;
+    --positive: #047857; --positive-soft: rgba(4,120,113,0.10);
+    --negative: #E11D48; --warning: #B45309;
+    --console-bg: #16181D; --console-text: #E4E6EB; --console-dim: #8A9099;
+    --console-border: rgba(255,255,255,0.10);
+    --shadow: 0 1px 2px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.06);
+  }
+  html.theme-dark {
+    --bg: #0C0D10; --surface: #16181D; --surface-hover: #1D2027; --surface-sunken: #101216;
+    --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.20);
+    --text: #E8EAED; --text-secondary: #969BA5;
+    --accent: #6BA0FF; --accent-soft: rgba(107,160,255,0.14);
+    --accent-secondary: #A78BFA;
+    --positive: #34D399; --positive-soft: rgba(52,211,153,0.14);
+    --negative: #FB7185; --warning: #FBBF24;
+    --console-bg: #08090B; --console-text: #E4E6EB; --console-dim: #7C828C;
+    --console-border: rgba(255,255,255,0.08);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  /* ===== BASE ===== */
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+                 "Noto Sans KR", "Malgun Gothic", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  code, pre, .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                 "DejaVu Sans Mono", "D2Coding", monospace;
+    font-variant-ligatures: none;
+  }
+  h1, h2, h3 { color: var(--text); letter-spacing: -0.025em; line-height: 1.18; text-wrap: balance; }
+  a { color: var(--accent); }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ===== HEADER ===== */
+  header.page {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 12px; margin-bottom: 20px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--positive); }
+  header.page h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 750; }
+  header.page h1 .mono { font-weight: 700; }
+  .summary {
+    margin-top: 20px; max-width: 62ch;
+    border-left: 3px solid var(--accent);
+    padding: 4px 0 4px 18px;
+    color: var(--text-secondary); font-size: 1.05rem;
+  }
+  .summary strong { color: var(--text); font-weight: 650; }
+
+  /* ===== PIPELINE ===== */
+  .pipeline {
+    margin: 40px 0 8px;
+    display: grid; gap: 12px;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: stretch;
+  }
+  .pipe-node {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 16px; text-align: center;
+    display: flex; flex-direction: column; justify-content: center; gap: 6px;
+    box-shadow: var(--shadow);
+  }
+  .pipe-node .label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-secondary);
+  }
+  .pipe-node .value { font-size: 0.98rem; font-weight: 600; }
+  .pipe-node .value .mono { font-size: 0.92rem; }
+  .pipe-node.is-skill {
+    border-color: var(--accent); background: var(--accent-soft);
+  }
+  .pipe-node.is-skill .value { color: var(--accent); }
+  .pipe-node.is-out { border-color: var(--positive); background: var(--positive-soft); }
+  .pipe-arrow {
+    align-self: center; display: flex; align-items: center; justify-content: center;
+    color: var(--border-strong);
+  }
+  .pipe-arrow svg { display: block; }
+  @media (max-width: 720px) {
+    .pipeline { grid-template-columns: 1fr; }
+    .pipe-arrow { transform: rotate(90deg); padding: 2px 0; }
+  }
+
+  /* ===== SECTIONS ===== */
+  section.step { padding-top: 56px; }
+  .step-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .step-num {
+    flex: 0 0 auto;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em;
+    color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 2px 9px; line-height: 1.5;
+  }
+  .step-head h2 { font-size: clamp(1.35rem, 3.2vw, 1.75rem); font-weight: 700; }
+  .step-note { color: var(--text-secondary); margin: 10px 0 22px; max-width: 66ch; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px; box-shadow: var(--shadow);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 14px 34px rgba(0,0,0,0.10); }
+  .card + .card { margin-top: 16px; }
+  .card-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px;
+  }
+
+  /* ===== CODE / CONSOLE ===== */
+  pre.code {
+    background: var(--surface-sunken); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+    font-size: 0.9rem; line-height: 1.7;
+    overflow-x: auto; color: var(--text);
+  }
+  pre.code .flag { color: var(--accent-secondary); }
+  pre.code .prompt { color: var(--text-secondary); user-select: none; }
+
+  .console {
+    background: var(--console-bg); border: 1px solid var(--console-border);
+    border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .console-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--console-border);
+    background: rgba(255,255,255,0.03);
+  }
+  .console-bar .lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--console-dim); opacity: 0.5; }
+  .console-bar .title {
+    font-size: 0.75rem; letter-spacing: 0.06em; color: var(--console-dim);
+    margin-left: 4px;
+  }
+  .console-body {
+    padding: 16px 18px; overflow-x: auto;
+    font-size: 0.875rem; line-height: 1.85; color: var(--console-text);
+  }
+  .console-body .line { display: block; white-space: pre; }
+  .console-body .tag-info { color: #6BA0FF; }
+  .console-body .tag-ok { color: #34D399; }
+  .console-body .verb { color: #FBBF24; }
+  .console-body .path { color: var(--console-text); }
+  .console-body .line.is-create { cursor: default; border-radius: 4px; padding: 0 4px; margin: 0 -4px; transition: background 0.15s ease; }
+  .console-body .line.is-create.hot { background: rgba(107,160,255,0.18); }
+  .console-body .msg { color: var(--console-dim); }
+
+  /* ===== ARTIFACT GRID ===== */
+  .artifacts {
+    margin-top: 18px;
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+  .artifact {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+  }
+  .artifact:hover, .artifact.hot {
+    border-color: var(--accent); background: var(--accent-soft);
+  }
+  .artifact .glyph {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 6px;
+    display: grid; place-items: center;
+    border: 1px solid var(--border-strong); color: var(--text-secondary);
+  }
+  .artifact.is-file .glyph { color: var(--positive); border-color: var(--positive); }
+  .artifact .name { font-size: 0.86rem; font-weight: 600; }
+  .artifact .depth { font-size: 0.7rem; color: var(--text-secondary); }
+
+  /* ===== STAT ROW ===== */
+  .stats {
+    margin-top: 22px; display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 18px 16px; box-shadow: var(--shadow);
+  }
+  .stat .n { font-size: 2.1rem; font-weight: 750; line-height: 1.1; letter-spacing: -0.03em; }
+  .stat .k { font-size: 0.82rem; color: var(--text-secondary); margin-top: 6px; }
+
+  ul.facts { list-style: none; display: grid; gap: 12px; }
+  ul.facts li {
+    display: grid; grid-template-columns: 150px 1fr; gap: 4px 16px;
+    align-items: baseline;
+    padding-bottom: 12px; border-bottom: 1px dashed var(--border);
+  }
+  ul.facts li:last-child { border-bottom: 0; padding-bottom: 0; }
+  ul.facts .k { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); }
+  ul.facts .v code { font-size: 0.88rem; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+  @media (max-width: 560px) { ul.facts li { grid-template-columns: 1fr; } }
+
+  .rerun {
+    margin-top: 16px; border: 1px solid var(--border); border-left: 3px solid var(--warning);
+    border-radius: 10px; background: var(--surface); padding: 18px 20px;
+  }
+  .rerun .card-label { color: var(--warning); }
+  .rerun p { color: var(--text-secondary); max-width: 70ch; }
+  .rerun code { font-size: 0.88rem; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; color: var(--text); }
+
+  footer.page {
+    margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 0.82rem; color: var(--text-secondary);
+  }
+
+  /* ===== MENU ===== */
+  .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+  .viz-menu-toggle {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow); transition: background 0.2s ease;
+  }
+  .viz-menu-toggle:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown {
+    position: absolute; top: 52px; right: 0; min-width: 208px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 8px; box-shadow: var(--shadow);
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  }
+  .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+  .viz-menu-dropdown button {
+    width: 100%; padding: 10px 12px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--text); font: inherit; font-size: 0.88rem;
+    cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 10px; transition: background 0.15s ease;
+  }
+  .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown button svg { flex: 0 0 auto; }
+
+  .skip-to-content {
+    position: absolute; left: -9999px; top: auto;
+    background: var(--accent); color: #fff; padding: 8px 14px;
+    border-radius: 6px; text-decoration: none; z-index: 10000;
+  }
+  .skip-to-content:focus { position: fixed; left: 16px; top: 16px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  /* ===== ANIMATION ===== */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate { animation: fadeInUp 0.55s ease-out both; }
+  .animate.delay-1 { animation-delay: 0.08s; }
+  .animate.delay-2 { animation-delay: 0.16s; }
+  .animate.delay-3 { animation-delay: 0.24s; }
+  .animate.delay-4 { animation-delay: 0.32s; }
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.55s ease, transform 0.55s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: #fff; color: #000; }
+    .viz-menu, .skip-to-content { display: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .card, .console, .stat, .artifact { break-inside: avoid; box-shadow: none; }
+    section.step { break-inside: avoid-page; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  @page { margin: 16mm; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+<div class="viz-menu">
+  <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-haspopup="true" aria-expanded="false" id="vizMenuToggle">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+      <line x1="3" y1="5.5" x2="17" y2="5.5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14.5" x2="17" y2="14.5"/>
+    </svg>
+  </button>
+  <div class="viz-menu-dropdown" id="vizMenuDropdown" role="menu">
+    <button onclick="cycleTheme()" role="menuitem" aria-label="테마 전환">
+      <svg id="themeIcon" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"></svg>
+      <span id="themeLabel">테마 전환</span>
+    </button>
+    <button onclick="window.print()" role="menuitem" aria-label="인쇄 또는 PDF 저장">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 7V2.8h8V7"/><rect x="3" y="7" width="14" height="7" rx="1.5"/><path d="M6 12.5h8v4.7H6z"/>
+      </svg>
+      <span>인쇄 / PDF</span>
+    </button>
+  </div>
+</div>
+
+<main id="main-content">
+<div class="wrap">
+
+  <header class="page">
+    <span class="eyebrow animate"><span class="dot"></span>skill output · gh-setup</span>
+    <h1 class="animate delay-1"><span class="mono">docs-bootstrap</span> 사용 결과</h1>
+    <p class="summary animate delay-2">
+      <strong>한 줄 요약</strong> — 대상 디렉터리 경로를 받아 8개 리프로 이루어진
+      <code class="mono">docs/</code> 트리와 정책 README 를 생성합니다.
+    </p>
+
+    <section class="pipeline animate delay-3" aria-label="입력에서 산출물까지의 파이프라인">
+      <div class="pipe-node">
+        <span class="label">입력</span>
+        <span class="value">디렉터리 경로</span>
+      </div>
+      <div class="pipe-arrow" aria-hidden="true">
+        <svg width="34" height="14" viewBox="0 0 34 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="7" x2="26" y2="7"/><polyline points="22,2.5 27.5,7 22,11.5"/>
+        </svg>
+      </div>
+      <div class="pipe-node is-skill">
+        <span class="label">스킬</span>
+        <span class="value"><code class="mono">/gh-setup:docs-bootstrap</code></span>
+      </div>
+      <div class="pipe-arrow" aria-hidden="true">
+        <svg width="34" height="14" viewBox="0 0 34 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="7" x2="26" y2="7"/><polyline points="22,2.5 27.5,7 22,11.5"/>
+        </svg>
+      </div>
+      <div class="pipe-node is-out">
+        <span class="label">산출물</span>
+        <span class="value"><code class="mono">docs/</code> 트리<br>(8 리프 + README.md)</span>
+      </div>
+    </section>
+  </header>
+
+  <!-- 1. 실행한 명령 -->
+  <section class="step" data-reveal aria-labelledby="s1">
+    <div class="step-head"><span class="step-num">01</span><h2 id="s1">실행한 명령</h2></div>
+    <p class="step-note">범용 형식과, 이번 예시에 실제로 쓴 명령입니다.</p>
+
+    <div class="card">
+      <div class="card-label">범용 형식</div>
+      <pre class="code"><code>/gh-setup:docs-bootstrap [path] <span class="flag">[--check|--apply|--dry-run] [--force]</span></code></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-label">이번 예시에 실제로 쓴 명령 &mdash; 네 스킬 중 유일하게 진짜 쓰기까지 실행</div>
+      <pre class="code"><code><span class="prompt">$ </span>bash skills/docs-bootstrap/lib/scaffold.sh &lt;scratch&gt;/demo-repo <span class="flag">--apply</span></code></pre>
+    </div>
+  </section>
+
+  <!-- 2. 입력 -->
+  <section class="step" data-reveal aria-labelledby="s2">
+    <div class="step-head"><span class="step-num">02</span><h2 id="s2">입력</h2></div>
+    <div class="card">
+      <ul class="facts">
+        <li>
+          <span class="k">대상 경로</span>
+          <span class="v">스크래치패드의 빈 디렉터리 <code class="mono">demo-repo/</code> &mdash; 실제 repo 를 건드리지 않으려고 임시 디렉터리를 썼습니다</span>
+        </li>
+        <li>
+          <span class="k">레이아웃 SSOT</span>
+          <span class="v"><code class="mono">skills/docs-bootstrap/lib/scaffold.sh</code></span>
+        </li>
+        <li>
+          <span class="k">README 본문 SSOT</span>
+          <span class="v"><code class="mono">skills/docs-bootstrap/references/docs-readme-template.md</code></span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. 결과 -->
+  <section class="step" data-reveal aria-labelledby="s3">
+    <div class="step-head"><span class="step-num">03</span><h2 id="s3">결과</h2></div>
+    <p class="step-note">터미널 출력 그대로입니다. 아래 항목 카드에 마우스를 올리면 대응하는 <code class="mono">create</code> 줄이 함께 강조됩니다.</p>
+
+    <div class="console mono" role="img" aria-label="scaffold.sh --apply 실행 터미널 출력: INFO 한 줄, create 아홉 줄, OK 한 줄">
+      <div class="console-bar" aria-hidden="true">
+        <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
+        <span class="title">scaffold.sh --apply</span>
+      </div>
+      <div class="console-body">
+<span class="line"><span class="tag-info">[INFO]</span> Scaffolding &lt;scratch&gt;/demo-repo/docs/ (kind-split layout)</span><span class="line is-create" data-idx="0">  <span class="verb">create</span> <span class="path">adr/.gitkeep</span></span><span class="line is-create" data-idx="1">  <span class="verb">create</span> <span class="path">product/.gitkeep</span></span><span class="line is-create" data-idx="2">  <span class="verb">create</span> <span class="path">design/.gitkeep</span></span><span class="line is-create" data-idx="3">  <span class="verb">create</span> <span class="path">architecture/system/.gitkeep</span></span><span class="line is-create" data-idx="4">  <span class="verb">create</span> <span class="path">architecture/features/.gitkeep</span></span><span class="line is-create" data-idx="5">  <span class="verb">create</span> <span class="path">testing/.gitkeep</span></span><span class="line is-create" data-idx="6">  <span class="verb">create</span> <span class="path">guides/.gitkeep</span></span><span class="line is-create" data-idx="7">  <span class="verb">create</span> <span class="path">public/.gitkeep</span></span><span class="line is-create" data-idx="8">  <span class="verb">create</span> <span class="path">README.md</span></span><span class="line"><span class="tag-ok">[OK]</span> <span class="msg">docs/ scaffolded. Empty folders are tracked via .gitkeep.</span></span>
+      </div>
+    </div>
+
+    <div class="artifacts" aria-label="생성된 9개 항목">
+      <div class="artifact" data-idx="0" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">adr/.gitkeep</span></span>
+      </div>
+      <div class="artifact" data-idx="1" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">product/.gitkeep</span></span>
+      </div>
+      <div class="artifact" data-idx="2" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">design/.gitkeep</span></span>
+      </div>
+      <div class="artifact" data-idx="3" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">architecture/system/.gitkeep</span><br><span class="depth">2단계</span></span>
+      </div>
+      <div class="artifact" data-idx="4" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">architecture/features/.gitkeep</span><br><span class="depth">2단계</span></span>
+      </div>
+      <div class="artifact" data-idx="5" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">testing/.gitkeep</span></span>
+      </div>
+      <div class="artifact" data-idx="6" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">guides/.gitkeep</span></span>
+      </div>
+      <div class="artifact" data-idx="7" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1.5 4.2a1 1 0 0 1 1-1h3.1l1.3 1.6h6.6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></span>
+        <span><span class="name mono">public/.gitkeep</span></span>
+      </div>
+      <div class="artifact is-file" data-idx="8" tabindex="0">
+        <span class="glyph" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 1.8h5.3l3.7 3.7v8.7a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-11.4a1 1 0 0 1 1-1z"/><path d="M8.8 1.8v3.7h3.7"/></svg></span>
+        <span><span class="name mono">README.md</span><br><span class="depth">유일한 본문 파일</span></span>
+      </div>
+    </div>
+
+    <div class="stats" aria-label="find docs -print 로 확인한 실제 산출물">
+      <div class="stat">
+        <div class="n" data-count="10">10</div>
+        <div class="k">디렉터리 &mdash; <code class="mono">docs/</code> + <code class="mono">architecture/</code> 중간 노드 포함</div>
+      </div>
+      <div class="stat">
+        <div class="n" data-count="9">9</div>
+        <div class="k">파일 &mdash; <code class="mono">.gitkeep</code> 8개 + <code class="mono">README.md</code> 1개</div>
+      </div>
+      <div class="stat">
+        <div class="n" data-count="8">8</div>
+        <div class="k">리프 &mdash; kind-split 레이아웃</div>
+      </div>
+    </div>
+
+    <div class="rerun">
+      <div class="card-label">재실행 &mdash; 멱등성</div>
+      <p>
+        같은 명령을 한 번 더 돌리자 아홉 줄이 전부 <code>skip ... (exists)</code> 로 바뀌고
+        <code>README.md</code> 만 <code>(exists &mdash; use --force to overwrite)</code> 를 덧붙였습니다.
+      </p>
+    </div>
+  </section>
+
+  <footer class="page">
+    출처: <code class="mono">docs/skill-output/docs-bootstrap-usage.md</code> &mdash; 이 페이지의 명령, 입력, 출력 줄은 모두 원문 그대로입니다.
+  </footer>
+
+</div>
+</main>
+
+<script>
+  var ICON_SUN = '<circle cx="10" cy="10" r="3.6"/><line x1="10" y1="1.6" x2="10" y2="3.4"/><line x1="10" y1="16.6" x2="10" y2="18.4"/><line x1="1.6" y1="10" x2="3.4" y2="10"/><line x1="16.6" y1="10" x2="18.4" y2="10"/><line x1="4.1" y1="4.1" x2="5.4" y2="5.4"/><line x1="14.6" y1="14.6" x2="15.9" y2="15.9"/><line x1="15.9" y1="4.1" x2="14.6" y2="5.4"/><line x1="5.4" y1="14.6" x2="4.1" y2="15.9"/>';
+  var ICON_MOON = '<path d="M16.2 12.3A6.9 6.9 0 0 1 7.7 3.8a6.9 6.9 0 1 0 8.5 8.5z"/>';
+
+  function toggleMenu() {
+    var d = document.getElementById('vizMenuDropdown');
+    var t = document.getElementById('vizMenuToggle');
+    var open = d.classList.toggle('open');
+    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function closeMenu() {
+    var d = document.getElementById('vizMenuDropdown');
+    var t = document.getElementById('vizMenuToggle');
+    if (d) { d.classList.remove('open'); }
+    if (t) { t.setAttribute('aria-expanded', 'false'); }
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.viz-menu')) { closeMenu(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeMenu(); }
+  });
+
+  // === 테마: 기본은 OS 설정(prefers-color-scheme). 버튼을 누르면 명시 선택이 저장된다. ===
+  var storedTheme = null;
+  try { storedTheme = localStorage.getItem('docs-bootstrap-usage-theme'); } catch (err) { storedTheme = null; }
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function effectiveTheme() {
+    if (storedTheme === 'dark' || storedTheme === 'light') { return storedTheme; }
+    return mq.matches ? 'dark' : 'light';
+  }
+  function paintThemeControl() {
+    var t = effectiveTheme();
+    var icon = document.getElementById('themeIcon');
+    var label = document.getElementById('themeLabel');
+    if (icon) { icon.innerHTML = t === 'dark' ? ICON_SUN : ICON_MOON; }
+    if (label) { label.textContent = t === 'dark' ? '라이트 모드' : '다크 모드'; }
+  }
+  function applyTheme(t) {
+    document.documentElement.className = 'theme-' + t;
+    storedTheme = t;
+    try { localStorage.setItem('docs-bootstrap-usage-theme', t); } catch (err) { /* 저장 불가여도 동작 */ }
+    paintThemeControl();
+  }
+  function cycleTheme() { applyTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); }
+  if (storedTheme === 'dark' || storedTheme === 'light') {
+    document.documentElement.className = 'theme-' + storedTheme;
+  } else {
+    document.documentElement.className = 'theme-auto';
+    if (mq.addEventListener) { mq.addEventListener('change', paintThemeControl); }
+  }
+  paintThemeControl();
+
+  // === 스크롤 등장 ===
+  var revealEls = document.querySelectorAll('[data-reveal]');
+  for (var i = 0; i < revealEls.length; i++) { revealEls[i].classList.add('reveal'); }
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('visible'); });
+  }
+
+  // === 숫자 카운터 ===
+  function animateCounters() {
+    document.querySelectorAll('[data-count]').forEach(function (el) {
+      if (el.dataset.counted) { return; }
+      el.dataset.counted = '1';
+      var target = parseFloat(el.dataset.count);
+      var start = performance.now();
+      (function tick(now) {
+        var p = Math.min((now - start) / 900, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (p < 1) { requestAnimationFrame(tick); }
+      })(start);
+    });
+  }
+  var firstCounter = document.querySelector('[data-count]');
+  if (firstCounter && 'IntersectionObserver' in window) {
+    var cObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { animateCounters(); cObs.disconnect(); } });
+    }, { threshold: 0.4 });
+    cObs.observe(firstCounter);
+  }
+
+  // === 항목 카드 <-> create 로그 줄 상호 강조 ===
+  var logLines = {};
+  document.querySelectorAll('.console-body .is-create').forEach(function (el) {
+    logLines[el.getAttribute('data-idx')] = el;
+  });
+  function linkHighlight(idx, on) {
+    var line = logLines[idx];
+    if (line) { line.classList.toggle('hot', on); }
+  }
+  document.querySelectorAll('.artifact').forEach(function (card) {
+    var idx = card.getAttribute('data-idx');
+    card.addEventListener('mouseenter', function () { linkHighlight(idx, true); });
+    card.addEventListener('mouseleave', function () { linkHighlight(idx, false); });
+    card.addEventListener('focus', function () { card.classList.add('hot'); linkHighlight(idx, true); });
+    card.addEventListener('blur', function () { card.classList.remove('hot'); linkHighlight(idx, false); });
+  });
+</script>
+</body>
+</html>

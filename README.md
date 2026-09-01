@@ -29,6 +29,13 @@ inline label logic, so there is one label SSOT and one force-sync policy.
 a repo's history, not part of standing a repo up. It is here because it is the
 same kind of job — a one-shot pass over a repo, not a per-commit habit.
 
+### Visual guides and worked examples (GitHub Pages)
+
+- `label-bootstrap` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/label-bootstrap.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/label-bootstrap-usage.html) (label SSOT to synced repo labels)
+- `kanban-bootstrap` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/kanban-bootstrap.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/kanban-bootstrap-usage.html) (repo coordinates to a Projects v2 board)
+- `docs-bootstrap` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/docs-bootstrap.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/docs-bootstrap-usage.html) (a directory path to a scaffolded docs/ tree)
+- `add-ai-metrics` — [visual guide](https://deity719.github.io/gh-setup-skills/skill-guides/add-ai-metrics.html) · [usage example](https://deity719.github.io/gh-setup-skills/skill-output/add-ai-metrics-usage.html) (issue/PR numbers to metrics footers)
+
 ## Requirements
 
 | Skill | Needs |

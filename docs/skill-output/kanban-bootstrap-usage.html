@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kanban-bootstrap 사용 결과</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===== THEME TOKENS =====
+       기본값 = 라이트. OS 다크 선호는 @media 로, 사용자 토글은 .theme-* 클래스로. */
+    :root {
+      --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4;
+      --border: rgba(0,0,0,0.10);
+      --text: #14181F; --text-secondary: #5A6472;
+      --accent: #2563eb; --accent-secondary: #7c3aed;
+      --positive: #059669; --negative: #e11d48; --warning: #b45309;
+      --console-bg: #12161D; --console-text: #DDE3EC; --console-dim: #8A94A6;
+      --console-border: rgba(255,255,255,0.10);
+      --shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 24px rgba(15,23,42,.06);
+      --rail: rgba(37,99,235,.22);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not(.theme-light) {
+        --bg: #0B0D11; --surface: #141922; --surface-hover: #1B2130;
+        --border: rgba(255,255,255,0.10);
+        --text: #E8ECF3; --text-secondary: #9AA5B6;
+        --accent: #6ea8fe; --accent-secondary: #a78bfa;
+        --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+        --console-bg: #080A0E; --console-text: #DDE3EC; --console-dim: #7D879A;
+        --console-border: rgba(255,255,255,0.08);
+        --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+        --rail: rgba(110,168,254,.28);
+      }
+    }
+    html.theme-dark {
+      --bg: #0B0D11; --surface: #141922; --surface-hover: #1B2130;
+      --border: rgba(255,255,255,0.10);
+      --text: #E8ECF3; --text-secondary: #9AA5B6;
+      --accent: #6ea8fe; --accent-secondary: #a78bfa;
+      --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+      --console-bg: #080A0E; --console-text: #DDE3EC; --console-dim: #7D879A;
+      --console-border: rgba(255,255,255,0.08);
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+      --rail: rgba(110,168,254,.28);
+    }
+    html.theme-light {
+      --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4;
+      --border: rgba(0,0,0,0.10);
+      --text: #14181F; --text-secondary: #5A6472;
+      --accent: #2563eb; --accent-secondary: #7c3aed;
+      --positive: #059669; --negative: #e11d48; --warning: #b45309;
+      --console-bg: #12161D; --console-text: #DDE3EC; --console-dim: #8A94A6;
+      --console-border: rgba(255,255,255,0.10);
+      --shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 24px rgba(15,23,42,.06);
+      --rail: rgba(37,99,235,.22);
+    }
+
+    html { scrollbar-gutter: stable; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard",
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      font-size: 16px; line-height: 1.65; letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+      transition: background .25s, color .25s;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", "D2Coding", monospace;
+    }
+    h1, h2, h3 { color: var(--text); letter-spacing: -0.035em; line-height: 1.15; text-wrap: balance; }
+    h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 750; }
+    h2 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 650; }
+    h3 { font-size: 1.5rem; font-weight: 600; }
+    p, li, td, th, span, label { color: var(--text); }
+    .text-secondary { color: var(--text-secondary); }
+    a { color: var(--accent); }
+
+    .wrap { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+
+    /* ===== HEADER ===== */
+    .page-header { padding: 72px 0 8px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: .78rem; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--text-secondary);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 14px; background: var(--surface);
+    }
+    .eyebrow::before {
+      content: ""; width: 7px; height: 7px; border-radius: 2px;
+      background: var(--accent);
+    }
+    .page-header h1 { margin: 22px 0 0; }
+    .lede {
+      margin-top: 16px; max-width: 62ch; font-size: 1.125rem;
+      color: var(--text-secondary); border-left: 3px solid var(--accent);
+      padding-left: 16px;
+    }
+
+    /* ===== PIPELINE ===== */
+    .pipeline {
+      margin: 44px 0 0; display: grid; gap: 12px;
+      grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch;
+    }
+    .node {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 18px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; justify-content: center; gap: 8px;
+      transition: box-shadow .2s ease;
+    }
+    .node:hover { box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+    .node .node-role {
+      font-size: .72rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--text-secondary);
+    }
+    .node .node-name { font-size: 1.02rem; font-weight: 650; word-break: break-word; }
+    .node.is-skill { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    .node.is-skill .node-name { color: var(--accent); }
+    .arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent); min-width: 40px;
+    }
+    .arrow svg { display: block; }
+    @media (max-width: 720px) {
+      .pipeline { grid-template-columns: 1fr; }
+      .arrow { min-height: 34px; }
+      .arrow svg { transform: rotate(90deg); }
+    }
+
+    /* ===== SECTIONS ===== */
+    section { padding: 56px 0 0; }
+    .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+    .sec-num {
+      font-size: .82rem; font-weight: 700; letter-spacing: .1em;
+      color: var(--accent); border: 1px solid var(--rail);
+      border-radius: 6px; padding: 3px 9px; background: var(--surface);
+    }
+    .sec-sub { color: var(--text-secondary); margin-top: 6px; max-width: 70ch; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px; box-shadow: var(--shadow);
+      transition: box-shadow .2s ease;
+    }
+    .card:hover { box-shadow: 0 0 0 1px var(--border), var(--shadow); }
+    .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .stack { display: grid; gap: 16px; margin-top: 22px; }
+
+    .label-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .label {
+      font-size: .74rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--text-secondary);
+    }
+    .badge {
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+      padding: 3px 9px; border-radius: 999px; border: 1px solid;
+    }
+    .badge-dry { color: var(--warning); border-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+    .badge-ok { color: var(--positive); border-color: var(--positive); background: color-mix(in srgb, var(--positive) 12%, transparent); }
+
+    /* ===== CONSOLE ===== */
+    .console {
+      background: var(--console-bg); border: 1px solid var(--console-border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .console-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-bottom: 1px solid var(--console-border);
+      background: rgba(255,255,255,.03);
+    }
+    .dots { display: flex; gap: 6px; }
+    .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--console-dim); opacity: .5; }
+    .console-title {
+      font-size: .76rem; letter-spacing: .06em; color: var(--console-dim);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .console-copy {
+      margin-left: auto; background: transparent; color: var(--console-dim);
+      border: 1px solid var(--console-border); border-radius: 6px;
+      font: inherit; font-size: .74rem; padding: 3px 10px; cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .console-copy:hover, .console-copy:focus-visible { color: var(--console-text); border-color: var(--console-dim); }
+    .console pre {
+      margin: 0; padding: 16px 18px; overflow-x: auto;
+      color: var(--console-text); font-size: .92rem; line-height: 1.7;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", "D2Coding", monospace;
+      tab-size: 2;
+    }
+    .console pre .prompt { color: var(--console-dim); user-select: none; }
+
+    /* ===== STEPPER ===== */
+    .steps { margin-top: 24px; display: grid; gap: 0; }
+    .step {
+      display: grid; grid-template-columns: 44px 1fr; gap: 18px;
+      padding-bottom: 22px; position: relative;
+    }
+    .step:not(:last-child)::before {
+      content: ""; position: absolute; left: 21px; top: 40px; bottom: 0;
+      width: 2px; background: var(--rail);
+    }
+    .step-num {
+      width: 44px; height: 40px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .95rem; color: var(--accent);
+      box-shadow: var(--shadow); z-index: 1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .step-body { min-width: 0; padding-top: 4px; }
+    .step-title { font-weight: 650; font-size: 1.05rem; }
+    .step-out {
+      margin-top: 10px; background: var(--console-bg);
+      border: 1px solid var(--console-border); border-radius: 8px;
+      padding: 10px 14px; overflow-x: auto;
+      color: var(--console-text); font-size: .88rem; line-height: 1.6;
+      white-space: pre;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", "D2Coding", monospace;
+    }
+    .step-out .tag { color: var(--warning); }
+    .step-out .ok { color: var(--positive); }
+    .step-none {
+      margin-top: 8px; font-size: .9rem; color: var(--text-secondary);
+      font-style: normal;
+    }
+    .step.is-ui .step-num { color: var(--accent-secondary); border-color: var(--accent-secondary); }
+
+    /* ===== CALLOUT ===== */
+    .callout {
+      margin-top: 20px; border: 1px solid var(--border); border-left: 4px solid var(--warning);
+      background: var(--surface); border-radius: 10px; padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .callout h3 { font-size: 1.05rem; margin-bottom: 8px; }
+    .callout strong { color: var(--warning); }
+    .kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .9em; background: var(--surface-hover);
+      border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px;
+    }
+
+    ul.plain { list-style: none; display: grid; gap: 12px; }
+    ul.plain li { display: flex; gap: 12px; align-items: flex-start; }
+    ul.plain li::before {
+      content: ""; flex: none; margin-top: .55em;
+      width: 8px; height: 8px; border-radius: 2px;
+      background: var(--accent);
+    }
+
+    details.raw { margin-top: 22px; }
+    details.raw > summary {
+      cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: .95rem; color: var(--text);
+      border: 1px solid var(--border); background: var(--surface);
+      border-radius: 8px; padding: 9px 16px; box-shadow: var(--shadow);
+      user-select: none;
+    }
+    details.raw > summary::-webkit-details-marker { display: none; }
+    details.raw > summary .chev { transition: transform .2s ease; color: var(--accent); display: block; }
+    details.raw[open] > summary .chev { transform: rotate(90deg); }
+    details.raw > summary:hover { background: var(--surface-hover); }
+    details.raw .console { margin-top: 14px; }
+
+    footer.page-footer {
+      margin-top: 64px; padding: 26px 0 60px; border-top: 1px solid var(--border);
+      color: var(--text-secondary); font-size: .88rem;
+      display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap;
+    }
+
+    /* ===== MENU ===== */
+    .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+    .viz-menu-toggle {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); cursor: pointer; display: flex;
+      align-items: center; justify-content: center; box-shadow: var(--shadow);
+      transition: background .2s;
+    }
+    .viz-menu-toggle:hover { background: var(--surface-hover); }
+    .viz-menu-dropdown {
+      position: absolute; top: 52px; right: 0; min-width: 200px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px; box-shadow: var(--shadow);
+      opacity: 0; visibility: hidden; transform: translateY(-8px);
+      transition: opacity .2s, transform .2s, visibility .2s;
+    }
+    .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+    .viz-menu-dropdown button {
+      width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
+      background: transparent; color: var(--text); font: inherit; font-size: .92rem;
+      cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;
+      transition: background .15s;
+    }
+    .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+    .viz-menu-dropdown button svg { flex: none; color: var(--accent); }
+
+    .skip-to-content {
+      position: absolute; top: -60px; left: 6px; background: var(--accent);
+      color: #fff; padding: 8px 14px; text-decoration: none; border-radius: 6px;
+      z-index: 10000; transition: top .2s;
+    }
+    .skip-to-content:focus { top: 6px; }
+
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+    .animate { animation: fadeInUp .55s ease-out both; }
+    .animate.delay-1 { animation-delay: .08s; }
+    .animate.delay-2 { animation-delay: .16s; }
+    .animate.delay-3 { animation-delay: .24s; }
+    .animate.delay-4 { animation-delay: .32s; }
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .viz-menu, .skip-to-content { display: none !important; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+      .card, .node, .callout { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+      .console, .step-out { background: #f4f4f5 !important; color: #111 !important; border: 1px solid #ccc; }
+      .console pre, .console-title { color: #111 !important; }
+      .console-copy { display: none !important; }
+      details.raw[open] > summary { border: none; }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+    @page { margin: 1in; }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+  <div class="viz-menu">
+    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-haspopup="true" aria-expanded="false" id="vizMenuToggle">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+      </svg>
+    </button>
+    <div class="viz-menu-dropdown" id="vizMenuDropdown" role="menu">
+      <button onclick="cycleTheme()" role="menuitem">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <circle cx="8" cy="8" r="3.4"/><path d="M8 .8v2M8 13.2v2M.8 8h2M13.2 8h2M2.9 2.9l1.4 1.4M11.7 11.7l1.4 1.4M13.1 2.9l-1.4 1.4M4.3 11.7l-1.4 1.4" stroke-linecap="round"/>
+        </svg>
+        <span id="themeLabel">다크 모드</span>
+      </button>
+      <button onclick="window.print()" role="menuitem">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M4.5 6V1.8h7V6M4.5 12.2H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4.2a1 1 0 0 1-1 1h-1.5"/>
+          <rect x="4.5" y="9.6" width="7" height="4.6" rx=".6"/>
+        </svg>
+        <span>인쇄 / PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <main id="main-content" role="main">
+    <div class="wrap">
+
+      <header class="page-header">
+        <span class="eyebrow animate">gh-setup 스킬 실행 기록</span>
+        <h1 class="animate delay-1">kanban-bootstrap 사용 결과</h1>
+        <p class="lede animate delay-2">
+          한 줄 요약 — repo 좌표(owner/name)를 받아 Projects v2 칸반 보드와 6컬럼
+          Status 필드를 생성합니다.
+        </p>
+
+        <div class="pipeline animate delay-3" role="img" aria-label="파이프라인: repo 좌표에서 gh-setup 콜론 kanban-bootstrap 스킬을 거쳐 Projects v2 보드와 6컬럼 Status 산출">
+          <div class="node">
+            <span class="node-role">입력</span>
+            <span class="node-name">repo 좌표</span>
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg width="34" height="16" viewBox="0 0 34 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 8h29"/><path d="M25 3l5 5-5 5"/>
+            </svg>
+          </div>
+          <div class="node is-skill">
+            <span class="node-role">스킬</span>
+            <span class="node-name mono">/gh-setup:kanban-bootstrap</span>
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg width="34" height="16" viewBox="0 0 34 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 8h29"/><path d="M25 3l5 5-5 5"/>
+            </svg>
+          </div>
+          <div class="node">
+            <span class="node-role">산출물</span>
+            <span class="node-name">Projects v2 보드 + 6컬럼 Status</span>
+          </div>
+        </div>
+      </header>
+
+      <section id="command" data-reveal>
+        <div class="sec-head">
+          <span class="sec-num">01</span>
+          <h2>실행한 명령</h2>
+        </div>
+
+        <div class="stack">
+          <div class="card">
+            <div class="label-row"><span class="label">범용 형식</span></div>
+            <div class="console">
+              <div class="console-bar">
+                <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="console-title">usage</span>
+                <button class="console-copy" type="button" data-copy="/gh-setup:kanban-bootstrap [--owner &lt;login&gt;] [--repo &lt;name&gt;] [options]">복사</button>
+              </div>
+              <pre>/gh-setup:kanban-bootstrap [--owner &lt;login&gt;] [--repo &lt;name&gt;] [options]</pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="label-row">
+              <span class="label">이번 예시에 실제로 쓴 명령</span>
+              <span class="badge badge-dry">드라이런 — 프로젝트/링크/필드/파일 변경 0건</span>
+            </div>
+            <div class="console">
+              <div class="console-bar">
+                <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="console-title">shell</span>
+                <button class="console-copy" type="button" data-copy="bash skills/kanban-bootstrap/lib/setup.sh --owner dEitY719 --repo gh-setup-skills --dry-run">복사</button>
+              </div>
+              <pre>bash skills/kanban-bootstrap/lib/setup.sh --owner dEitY719 --repo gh-setup-skills --dry-run</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="input" data-reveal>
+        <div class="sec-head">
+          <span class="sec-num">02</span>
+          <h2>입력</h2>
+        </div>
+
+        <div class="grid-2 stack">
+          <article class="card">
+            <div class="label-row"><span class="label">대상 repo</span></div>
+            <p class="mono" style="font-size:1.05rem;font-weight:600;">dEitY719/gh-setup-skills</p>
+            <p class="text-secondary" style="margin-top:6px;">보드가 아직 없는 새 repo</p>
+          </article>
+          <article class="card">
+            <div class="label-row"><span class="label">인증</span></div>
+            <p><span class="mono">project</span> 스코프를 가진 <span class="mono">gh</span> CLI + <span class="mono">jq</span></p>
+          </article>
+        </div>
+      </section>
+
+      <section id="result" data-reveal>
+        <div class="sec-head">
+          <span class="sec-num">03</span>
+          <h2>결과</h2>
+          <span class="badge badge-ok">8단계 중 7단계 = 스크립트 담당</span>
+        </div>
+        <p class="sec-sub">
+          8단계 중 스크립트가 담당하는 7단계까지의 실제 출력 (ANSI 색상 제거,
+          UI 체크리스트 8줄은 지면상 생략):
+        </p>
+
+        <ol class="steps" aria-label="실행 로그 7단계">
+          <li class="step">
+            <span class="step-num" aria-hidden="true">1</span>
+            <div class="step-body">
+              <div class="step-title">Validating repository access</div>
+              <div class="step-out"><span class="ok">Repository found: https://github.com/dEitY719/gh-setup-skills</span></div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">2</span>
+            <div class="step-body">
+              <div class="step-title">Checking for an existing project titled 'gh-setup-skills'</div>
+              <p class="step-none">출력 줄 없음</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">3</span>
+            <div class="step-body">
+              <div class="step-title">Creating the project</div>
+              <div class="step-out"><span class="tag">[dry-run]</span> Would create project 'gh-setup-skills' under dEitY719</div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">4</span>
+            <div class="step-body">
+              <div class="step-title">Linking the repository</div>
+              <div class="step-out"><span class="tag">[dry-run]</span> Would link dEitY719/gh-setup-skills to project 'gh-setup-skills'</div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">5</span>
+            <div class="step-body">
+              <div class="step-title">Replacing the Status options</div>
+              <div class="step-out"><span class="tag">[dry-run]</span> Would replace Status options with the 6-option dotfiles workflow</div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">6</span>
+            <div class="step-body">
+              <div class="step-title">Ensuring the pull request template</div>
+              <div class="step-out"><span class="tag">[dry-run]</span> Would create .github/pull_request_template.md on main</div>
+            </div>
+          </li>
+          <li class="step is-ui">
+            <span class="step-num" aria-hidden="true">7</span>
+            <div class="step-body">
+              <div class="step-title">Printing the remaining UI checklist</div>
+              <p class="step-none">UI 체크리스트 8줄은 지면상 생략</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="card" style="margin-top:6px;">
+          <div class="label-row"><span class="label">Mode</span></div>
+          <div class="step-out">Dry-run only: no project, link, field, or file mutations were sent.</div>
+        </div>
+
+        <details class="raw">
+          <summary>
+            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>
+            원문 로그 그대로 보기
+          </summary>
+          <div class="console">
+            <div class="console-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="console-title">setup.sh --dry-run</span>
+            </div>
+<pre>[1] Validating repository access
+  Repository found: https://github.com/dEitY719/gh-setup-skills
+[2] Checking for an existing project titled 'gh-setup-skills'
+[3] Creating the project
+  [dry-run] Would create project 'gh-setup-skills' under dEitY719
+[4] Linking the repository
+  [dry-run] Would link dEitY719/gh-setup-skills to project 'gh-setup-skills'
+[5] Replacing the Status options
+  [dry-run] Would replace Status options with the 6-option dotfiles workflow
+[6] Ensuring the pull request template
+  [dry-run] Would create .github/pull_request_template.md on main
+[7] Printing the remaining UI checklist
+
+Mode
+  Dry-run only: no project, link, field, or file mutations were sent.</pre>
+          </div>
+        </details>
+
+        <div class="callout">
+          <h3>읽는 법</h3>
+          <p>
+            프로젝트 번호가 <span class="kbd">#0</span> 으로 나온 것은 드라이런이라 실제 보드가 만들어지지 않아
+            번호를 배정받지 못했기 때문입니다. 7단계가 출력한 UI 체크리스트에는 사람이
+            직접 켜야 할 워크플로 8건이 호스트별 링크와 함께 들어 있고, 그중
+            "Pull request linked to issue" 는 활성화가 아니라 <strong>비활성화</strong>가 지시입니다.
+          </p>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <span>출처: docs/skill-output/kanban-bootstrap-usage.md</span>
+        <span>gh-setup / kanban-bootstrap</span>
+      </footer>
+
+    </div>
+  </main>
+
+  <script>
+    // === Menu ===
+    function toggleMenu() {
+      var dropdown = document.getElementById('vizMenuDropdown');
+      var toggle = document.getElementById('vizMenuToggle');
+      if (!dropdown) return;
+      var open = dropdown.classList.toggle('open');
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function closeMenu() {
+      var dropdown = document.getElementById('vizMenuDropdown');
+      var toggle = document.getElementById('vizMenuToggle');
+      if (dropdown) dropdown.classList.remove('open');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.viz-menu')) closeMenu();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeMenu();
+    });
+
+    // === Theme (OS 기본값 존중, 토글하면 클래스로 고정) ===
+    var savedTheme = null;
+    try { savedTheme = localStorage.getItem('kanban-usage-theme'); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    function applyTheme(t) {
+      document.documentElement.className = 'theme-' + t;
+      var label = document.getElementById('themeLabel');
+      if (label) label.textContent = (t === 'dark') ? '라이트 모드' : '다크 모드';
+      try { localStorage.setItem('kanban-usage-theme', t); } catch (e) {}
+      currentTheme = t;
+    }
+    function cycleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+    if (savedTheme) { applyTheme(savedTheme); } else { applyTheme(currentTheme); }
+
+    // === Copy buttons ===
+    document.querySelectorAll('.console-copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.getAttribute('data-copy') || '';
+        var done = function () {
+          var prev = btn.textContent;
+          btn.textContent = '복사됨';
+          setTimeout(function () { btn.textContent = prev; }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () {});
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        }
+      });
+    });
+
+    // === Scroll reveal ===
+    document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); });
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+  </script>
+</body>
+</html>

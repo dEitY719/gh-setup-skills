@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>add-ai-metrics — 스킬 설명서</title>
+  <meta name="description" content="gh-setup 플러그인의 add-ai-metrics 스킬 설명서. 기존 GitHub Issue/PR 본문에 tokens · human-h · ai-min 메트릭 푸터를 소급 부착한다.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===== THEMES (class-based; prefers-color-scheme only as no-JS fallback) ===== */
+    html.theme-light, html {
+      --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4;
+      --surface-sunken: #F4F4F2;
+      --border: rgba(15, 23, 42, 0.10); --border-strong: rgba(15, 23, 42, 0.20);
+      --text: #0f172a; --text-secondary: #5b6675;
+      --accent: #2563eb; --accent-secondary: #7c3aed;
+      --positive: #059669; --negative: #e11d48; --warning: #b45309;
+      --accent-soft: rgba(37, 99, 235, 0.10);
+      --positive-soft: rgba(5, 150, 105, 0.12);
+      --negative-soft: rgba(225, 29, 72, 0.10);
+      --warning-soft: rgba(180, 83, 9, 0.12);
+      --shadow: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.06);
+      color-scheme: light;
+    }
+    html.theme-dark {
+      --bg: #0A0A0A; --surface: #141414; --surface-hover: #1C1C1C;
+      --surface-sunken: #101010;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.22);
+      --text: #EDEDED; --text-secondary: #9aa1ab;
+      --accent: #60a5fa; --accent-secondary: #a78bfa;
+      --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+      --accent-soft: rgba(96, 165, 250, 0.14);
+      --positive-soft: rgba(52, 211, 153, 0.14);
+      --negative-soft: rgba(251, 113, 133, 0.14);
+      --warning-soft: rgba(251, 191, 36, 0.14);
+      --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.45);
+      color-scheme: dark;
+    }
+    /* No-JS / first-paint fallback: honour the OS setting when no class is set yet. */
+    @media (prefers-color-scheme: dark) {
+      html:not(.theme-light) {
+        --bg: #0A0A0A; --surface: #141414; --surface-hover: #1C1C1C;
+        --surface-sunken: #101010;
+        --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.22);
+        --text: #EDEDED; --text-secondary: #9aa1ab;
+        --accent: #60a5fa; --accent-secondary: #a78bfa;
+        --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+        --accent-soft: rgba(96, 165, 250, 0.14);
+        --positive-soft: rgba(52, 211, 153, 0.14);
+        --negative-soft: rgba(251, 113, 133, 0.14);
+        --warning-soft: rgba(251, 191, 36, 0.14);
+        --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.45);
+        color-scheme: dark;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard,
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Roboto, Arial, sans-serif;
+      background: var(--bg); color: var(--text);
+      font-size: 1rem; line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
+      transition: background 0.3s, color 0.3s;
+      scrollbar-gutter: stable;
+      word-break: keep-all; overflow-wrap: anywhere;
+    }
+    code, kbd, pre, .mono {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", "D2Coding", monospace;
+      font-size: 0.92em; letter-spacing: 0;
+    }
+    h1, h2, h3, h4 { color: var(--text); letter-spacing: -0.03em; line-height: 1.15; text-wrap: balance; }
+    h1 { font-weight: 800; font-size: clamp(2.6rem, 7vw, 3.6rem); letter-spacing: -0.045em; }
+    h2 { font-weight: 700; font-size: clamp(1.9rem, 4.2vw, 2.25rem); }
+    h3 { font-weight: 650; font-size: clamp(1.35rem, 3vw, 1.55rem); }
+    h4 { font-weight: 650; font-size: 1.05rem; letter-spacing: -0.015em; }
+    p, li, td, th, span, label { color: var(--text); font-weight: 400; }
+    .text-secondary { color: var(--text-secondary); }
+    a { color: var(--accent); }
+
+    /* ===== LAYOUT ===== */
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 56px 0; border-top: 1px solid var(--border); }
+    section:first-of-type { border-top: none; }
+    .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+    .sec-num {
+      font-size: 0.8rem; font-weight: 700; letter-spacing: 0.14em;
+      color: var(--accent); border: 1px solid var(--accent);
+      border-radius: 999px; padding: 3px 11px; white-space: nowrap;
+    }
+    .sec-lede { color: var(--text-secondary); max-width: 68ch; margin-bottom: 28px; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+    /* ===== HERO ===== */
+    header.hero { padding: 88px 0 56px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 0.82rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+    .hero h1 .mono { font-size: 0.92em; }
+    .hero-sub { font-size: 1.05rem; color: var(--text-secondary); margin-top: 10px; font-weight: 500; }
+    .summary {
+      margin-top: 32px; padding: 22px 26px;
+      border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      border-radius: 4px 12px 12px 4px; background: var(--surface);
+      max-width: 74ch;
+    }
+    .summary .label {
+      font-size: 0.76rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px;
+    }
+    .summary p { font-size: 1.08rem; }
+
+    /* ===== STATS ===== */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+      background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 32px; }
+    .stat { background: var(--surface); padding: 20px 22px; }
+    .stat .num { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--text); }
+    .stat .num .unit { font-size: 0.95rem; font-weight: 600; color: var(--text-secondary); margin-left: 3px; letter-spacing: 0; }
+    .stat .cap { display: block; margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); }
+
+    /* ===== ARTIFACT DIAGRAM ===== */
+    .artifact {
+      background: var(--surface-sunken); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; overflow-x: auto;
+    }
+    .art-line { display: block; padding: 7px 12px; border-radius: 6px; white-space: nowrap; }
+    .art-body { color: var(--text-secondary); }
+    .art-marker { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .art-inner { background: var(--surface); border: 1px dashed var(--border-strong); margin: 0 0 0 14px; }
+    .art-sep { color: var(--text-secondary); }
+    .art-note { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.9rem; color: var(--text-secondary); }
+    .rule-badge {
+      display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 3px 9px;
+      border-radius: 999px; background: var(--positive-soft); color: var(--positive);
+      border: 1px solid var(--positive);
+    }
+    .metric-trio { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 18px; }
+    .metric {
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+      background: var(--surface); border-top: 3px solid var(--accent);
+    }
+    .metric:nth-child(2) { border-top-color: var(--accent-secondary); }
+    .metric:nth-child(3) { border-top-color: var(--positive); }
+    .metric .k { font-weight: 700; font-size: 1rem; }
+    .metric .v { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+
+    /* ===== YES / NO CARDS ===== */
+    .verdict { display: flex; align-items: flex-start; gap: 14px; }
+    .mark {
+      flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.95rem; border: 1.5px solid;
+    }
+    .mark.yes { color: var(--positive); border-color: var(--positive); background: var(--positive-soft); }
+    .mark.no { color: var(--negative); border-color: var(--negative); background: var(--negative-soft); }
+    .verdict h4 { margin-bottom: 6px; }
+    .verdict .alt { display: block; margin-top: 10px; font-size: 0.88rem; color: var(--text-secondary); }
+    .verdict .alt strong { color: var(--text); font-weight: 600; }
+
+    /* ===== CODE BLOCK ===== */
+    .codewrap { position: relative; }
+    pre.code {
+      background: var(--surface-sunken); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px 24px; overflow-x: auto;
+      line-height: 1.75; color: var(--text);
+    }
+    pre.code .cmd { color: var(--accent); font-weight: 700; }
+    pre.code .opt { color: var(--text); }
+    pre.code .dim { color: var(--text-secondary); }
+    .copybtn {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary);
+      border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .copybtn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-strong); }
+
+    /* ===== TABLE ===== */
+    .tablebar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tablebar input {
+      flex: 1 1 220px; min-width: 0; padding: 10px 14px; font-size: 0.95rem; font-family: inherit;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .tablebar input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    .tablebar .count { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+    .tablescroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    thead th {
+      text-align: left; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-secondary);
+      padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface-sunken);
+    }
+    tbody td { padding: 15px 18px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.95rem; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface-hover); }
+    td.arg { white-space: nowrap; }
+    td.arg code { font-weight: 600; color: var(--accent); }
+    td.def { white-space: nowrap; }
+    td.def code { color: var(--text-secondary); }
+    .empty-row td { text-align: center; color: var(--text-secondary); padding: 28px; }
+
+    /* ===== MODE PRECEDENCE ===== */
+    .modes { display: grid; gap: 12px; }
+    .mode {
+      display: grid; grid-template-columns: 42px 1fr; gap: 18px; align-items: start;
+      border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .mode:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+    .mode .rank {
+      width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.05rem; background: var(--accent-soft); color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .mode .name { font-weight: 700; font-size: 1.05rem; }
+    .mode .cond { display: block; font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px; }
+    .mode .cond code { color: var(--text); font-weight: 600; }
+    .callout {
+      margin-top: 16px; display: flex; gap: 14px; align-items: flex-start;
+      border: 1px solid var(--negative); border-left-width: 4px; border-radius: 4px 12px 12px 4px;
+      background: var(--negative-soft); padding: 16px 20px;
+    }
+    .callout .tag {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--negative); border: 1px solid var(--negative); border-radius: 999px;
+      padding: 2px 9px; white-space: nowrap; flex: 0 0 auto; margin-top: 2px;
+    }
+
+    /* ===== STEPS ===== */
+    ol.steps { list-style: none; counter-reset: s; display: grid; gap: 0; }
+    ol.steps li {
+      counter-increment: s; position: relative; padding: 0 0 26px 58px;
+    }
+    ol.steps li::before {
+      content: counter(s); position: absolute; left: 0; top: 0;
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.95rem;
+      background: var(--surface); color: var(--accent);
+      border: 1.5px solid var(--accent);
+    }
+    ol.steps li::after {
+      content: ""; position: absolute; left: 17.5px; top: 40px; bottom: 4px;
+      width: 1.5px; background: var(--border-strong);
+    }
+    ol.steps li:last-child { padding-bottom: 0; }
+    ol.steps li:last-child::after { display: none; }
+    ol.steps h4 { margin-bottom: 4px; }
+    ol.steps p { color: var(--text-secondary); font-size: 0.96rem; }
+    ol.steps p code, .mode code, .verdict code, li code, p code, td code {
+      background: var(--surface-sunken); border: 1px solid var(--border);
+      border-radius: 5px; padding: 1px 6px;
+    }
+
+    /* ===== CONSTRAINTS ===== */
+    .con { border-left: 3px solid var(--border-strong); padding: 4px 0 4px 20px; }
+    .con.key { border-left-color: var(--accent); }
+    .con h4 { margin-bottom: 6px; }
+    .con p { color: var(--text-secondary); font-size: 0.95rem; }
+    .conlist { display: grid; gap: 22px; }
+
+    footer.foot { padding: 40px 0 64px; border-top: 1px solid var(--border); }
+    footer.foot p { font-size: 0.88rem; color: var(--text-secondary); }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    .animate { animation: fadeInUp 0.6s ease-out both; }
+    .animate.delay-1 { animation-delay: 0.08s; }
+    .animate.delay-2 { animation-delay: 0.16s; }
+    .animate.delay-3 { animation-delay: 0.24s; }
+    .animate.delay-4 { animation-delay: 0.32s; }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+
+    /* ===== MENU ===== */
+    .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+    .viz-menu-toggle {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); cursor: pointer; display: flex;
+      align-items: center; justify-content: center; box-shadow: var(--shadow);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .viz-menu-toggle:hover { background: var(--surface-hover); border-color: var(--border-strong); }
+    .viz-menu-dropdown {
+      position: absolute; top: 52px; right: 0; min-width: 200px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px; box-shadow: var(--shadow);
+      opacity: 0; visibility: hidden; transform: translateY(-8px);
+      transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+    }
+    .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+    .viz-menu-dropdown button {
+      width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
+      background: transparent; color: var(--text); font-size: 0.9rem;
+      font-family: inherit; cursor: pointer; text-align: left;
+      display: flex; align-items: center; gap: 10px; transition: background 0.15s;
+    }
+    .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+    .viz-menu-dropdown button svg { flex: 0 0 auto; }
+
+    .skip-to-content {
+      position: absolute; top: -60px; left: 6px; background: var(--accent);
+      color: #fff; padding: 8px 14px; text-decoration: none;
+      border-radius: 6px; z-index: 10000; transition: top 0.2s;
+    }
+    .skip-to-content:focus { top: 6px; }
+
+    /* ===== PRINT ===== */
+    @media print {
+      html { --bg: #fff; --surface: #fff; --surface-sunken: #fafafa; --surface-hover: #fff;
+             --text: #000; --text-secondary: #444; --border: #ddd; --border-strong: #bbb; --shadow: none; }
+      body { background: #fff !important; color: #000 !important; }
+      .viz-menu, .copybtn, .tablebar input, .skip-to-content { display: none !important; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+      .card, .mode, .tablescroll, .artifact, .summary { break-inside: avoid; box-shadow: none; }
+      section { break-inside: auto; padding: 28px 0; }
+      table { min-width: 0; }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+    @page { margin: 15mm; }
+
+    @media (max-width: 520px) {
+      .wrap { padding: 0 18px; }
+      header.hero { padding: 64px 0 40px; }
+      .mode { grid-template-columns: 1fr; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+  <div class="viz-menu">
+    <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-haspopup="true" aria-expanded="false" id="vizMenuToggle">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+      </svg>
+    </button>
+    <div class="viz-menu-dropdown" id="vizMenuDropdown" role="menu">
+      <button onclick="cycleTheme()" role="menuitem" aria-label="테마 전환">
+        <svg id="themeIcon" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"></svg>
+        <span id="themeLabel">테마</span>
+      </button>
+      <button onclick="window.print()" role="menuitem" aria-label="인쇄 또는 PDF 저장">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 7V2.5h8V7"/><rect x="3" y="7" width="14" height="7" rx="1.5"/><path d="M6 12h8v5.5H6z"/>
+        </svg>
+        <span>인쇄 / PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <main id="main-content">
+
+    <header class="hero">
+      <div class="wrap">
+        <span class="eyebrow animate"><span class="dot"></span>gh-setup 플러그인 &nbsp;/&nbsp; 스킬 설명서</span>
+        <h1 class="animate delay-1"><span class="mono">add-ai-metrics</span></h1>
+        <p class="hero-sub animate delay-1">GitHub Issue / PR 메트릭 푸터 백필</p>
+
+        <div class="summary animate delay-2">
+          <span class="label">한 줄 요약</span>
+          <p>자동 캡처가 도입되기 전에 만들어진 GitHub Issue / PR 본문에
+          <strong><code>tokens · human-h · ai-min</code> 메트릭 푸터</strong>를 소급해서 붙인다.</p>
+        </div>
+
+        <div class="stats animate delay-3">
+          <div class="stat">
+            <div class="num"><span data-count="3">3</span><span class="unit">가지</span></div>
+            <span class="cap">배타적 실행 모드</span>
+          </div>
+          <div class="stat">
+            <div class="num"><span data-count="4">4</span><span class="unit">단계</span></div>
+            <span class="cap">동작 흐름</span>
+          </div>
+          <div class="stat">
+            <div class="num"><span data-count="8">8</span><span class="unit">개</span></div>
+            <span class="cap">플래그</span>
+          </div>
+          <div class="stat">
+            <div class="num"><span data-count="100">100</span><span class="unit">건</span></div>
+            <span class="cap">확인 요구 임계</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="artifact" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">01</span><h2>무엇을 만들어 내는가</h2></div>
+        <p class="sec-lede">대상 카드의 <strong>본문 하단에 추가된 접이식 메트릭 블록</strong>이 산출물이다.
+        블록은 두 마커 사이에 세 값을 담는다.</p>
+
+        <div class="artifact mono" role="img" aria-label="카드 본문 하단에 ai-metrics 마커로 감싼 메트릭 블록이 추가된 구조">
+          <span class="art-line art-body">... 기존 이슈 / PR 본문 (변경되지 않음) ...</span>
+          <span class="art-line art-marker">&lt;!-- ai-metrics --&gt;</span>
+          <span class="art-line art-inner art-body">tokens &nbsp;·&nbsp; human-h &nbsp;·&nbsp; ai-min</span>
+          <span class="art-line art-marker">&lt;!-- /ai-metrics --&gt;</span>
+        </div>
+
+        <div class="metric-trio">
+          <div class="metric"><span class="k mono">tokens</span><span class="v">토큰 수</span></div>
+          <div class="metric"><span class="k mono">human-h</span><span class="v">사람 작업 시간 (h)</span></div>
+          <div class="metric"><span class="k mono">ai-min</span><span class="v">AI 작업 시간 (min)</span></div>
+        </div>
+
+        <p class="art-note"><span class="rule-badge">불변</span>
+        마커 바깥의 바이트는 절대 바뀌지 않는다.</p>
+      </div>
+    </section>
+
+    <section id="when" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">02</span><h2>언제 쓰고 언제 안 쓰는가</h2></div>
+        <p class="sec-lede">나머지 셋이 "repo 를 세우는" 작업인 데 비해 이것만 "repo 의 과거를 메우는" 백필이다.
+        한 repo 에 대해 대개 한 번만 돌린다.</p>
+
+        <div class="grid grid-3">
+          <article class="card verdict">
+            <span class="mark yes" aria-hidden="true">Y</span>
+            <div>
+              <h4>예전 이슈 / PR 에 푸터를 소급 부착한다</h4>
+              <p class="text-secondary">이 스킬이 담당한다.</p>
+            </div>
+          </article>
+          <article class="card verdict">
+            <span class="mark no" aria-hidden="true">N</span>
+            <div>
+              <h4>지금 새로 만드는 이슈 / PR 에 푸터를 넣는다</h4>
+              <span class="alt">대신 → <strong><code>gh:issue-create</code></strong> / <strong><code>gh:pr</code></strong> 가
+              생성 시점에 이미 붙인다.</span>
+            </div>
+          </article>
+          <article class="card verdict">
+            <span class="mark no" aria-hidden="true">N</span>
+            <div>
+              <h4>라벨 / 보드 / docs 골격이 필요하다</h4>
+              <span class="alt">대신 → <strong>나머지 세 형제 스킬</strong></span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="usage" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">03</span><h2>호출 형식</h2></div>
+        <p class="sec-lede">위치인자와 플래그의 전체 형태. 아래 표는 검색해서 좁힐 수 있다.</p>
+
+        <div class="codewrap">
+          <button class="copybtn" onclick="copyUsage(this)" aria-label="호출 형식 복사">복사</button>
+<pre class="code" id="usageBlock"><span class="cmd">/gh-setup:add-ai-metrics</span> <span class="dim">[</span><span class="opt">&lt;targets&gt;</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--type issue|PR</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--date &lt;date&gt;</span><span class="dim">]</span>
+                         <span class="dim">[</span><span class="opt">--pace &lt;dur&gt;</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--limit &lt;N&gt;</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--budget &lt;dur&gt;</span><span class="dim">]</span>
+                         <span class="dim">[</span><span class="opt">--dry-run</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--force</span><span class="dim">]</span> <span class="dim">[</span><span class="opt">--remote &lt;name&gt;</span><span class="dim">]</span></pre>
+        </div>
+
+        <div class="tablebar" style="margin-top:28px">
+          <label for="argFilter" class="text-secondary" style="font-size:0.9rem;font-weight:600">인자 검색</label>
+          <input type="search" id="argFilter" placeholder="예: date, limit, 멱등, 기본값" oninput="filterArgs(this.value)" aria-controls="argTable">
+          <span class="count" id="argCount" aria-live="polite">9개 표시 중</span>
+        </div>
+
+        <div class="tablescroll">
+          <table id="argTable">
+            <thead>
+              <tr><th scope="col">인자</th><th scope="col">기본값</th><th scope="col">의미</th></tr>
+            </thead>
+            <tbody id="argBody">
+              <tr>
+                <td class="arg"><code>issue#N</code> / <code>pr#M</code><br><span class="text-secondary" style="font-size:0.85rem">(위치인자)</span></td>
+                <td class="def text-secondary">—</td>
+                <td>대상 카드. 접두사는 대소문자를 가리지 않고 여러 개 나열할 수 있다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--type issue|PR</code></td>
+                <td class="def"><code>양쪽</code></td>
+                <td>날짜 필터 모드를 한 종류로 제한한다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--date &lt;date&gt;</code></td>
+                <td class="def text-secondary">—</td>
+                <td>날짜 필터 모드 트리거. 하루, 한 달(<code>YY-MM</code>), 반열린 범위(<code>A..B</code> / <code>A~B</code>) 를 받는다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--pace &lt;dur&gt;</code></td>
+                <td class="def"><code>0</code></td>
+                <td>쓰기 성공마다 <code>&lt;dur&gt;</code> 만큼 쉰다. 마지막 카드와 skip 경로에서는 쉬지 않는다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--limit &lt;N&gt;</code></td>
+                <td class="def"><code>없음</code></td>
+                <td>카드 <code>N</code> 개를 수정한 뒤 멈춘다. skip 은 세지 않는다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--budget &lt;dur&gt;</code></td>
+                <td class="def"><code>없음</code></td>
+                <td>벽시계 시간 <code>&lt;dur&gt;</code> 를 넘기기 전에 멈춘다. <code>--limit</code> 과 OR 로 결합된다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--dry-run</code></td>
+                <td class="def"><code>off</code></td>
+                <td>아무것도 쓰지 않고 분류만 한다. 상태 판정을 위해 view 호출은 한다.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--force</code></td>
+                <td class="def"><code>off</code></td>
+                <td>기존 푸터를 <strong>재계산해서</strong> 교체한다. 기본은 건너뛰기.</td>
+              </tr>
+              <tr>
+                <td class="arg"><code>--remote &lt;name&gt;</code></td>
+                <td class="def"><code>origin</code></td>
+                <td>대상 원격을 바꾼다.</td>
+              </tr>
+              <tr class="empty-row" id="argEmpty" hidden><td colspan="3">일치하는 인자가 없다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="modes" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">04</span><h2>세 가지 모드</h2></div>
+        <p class="sec-lede">모드는 배타적이며 <strong>먼저 맞는 것이 이긴다.</strong></p>
+
+        <div class="modes">
+          <div class="mode">
+            <span class="rank" aria-hidden="true">1</span>
+            <div>
+              <span class="name mono">explicit-list</span>
+              <span class="cond">위치인자가 있으면 이 모드.</span>
+            </div>
+          </div>
+          <div class="mode">
+            <span class="rank" aria-hidden="true">2</span>
+            <div>
+              <span class="name mono">date-filter</span>
+              <span class="cond">위치인자가 없고 <code>--date</code> 가 있으면 이 모드.</span>
+            </div>
+          </div>
+          <div class="mode">
+            <span class="rank" aria-hidden="true">3</span>
+            <div>
+              <span class="name mono">conversation-infer</span>
+              <span class="cond">둘 다 없으면 대화에서 <code>#NNN</code> 을 추론한다.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <span class="tag">하드 에러</span>
+          <p><code>--date</code> 와 위치인자를 함께 주면 하드 에러다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="steps" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">05</span><h2>동작 단계</h2></div>
+        <p class="sec-lede">인자 파싱에서 요약 출력까지 네 단계로 진행한다.</p>
+
+        <ol class="steps">
+          <li>
+            <h4>인자 파싱과 repo 결정</h4>
+            <p>인자를 파싱하고 <code>START_TS</code> 를 기록한 뒤 대상 repo 를 결정한다.
+            원격이 없으면 <code>git remote -v</code> 를 보여주고 멈춘다 — 조용한 폴백은 없다.</p>
+          </li>
+          <li>
+            <h4>모드 결정과 대상 목록 생성</h4>
+            <p>모드를 정하고 대상 목록을 만든다. 100건을 넘으면
+            <code>Continue with N cards?</code> 확인을 받는다 (기본 아니오).</p>
+          </li>
+          <li>
+            <h4>카드별 판정과 쓰기</h4>
+            <p>카드마다 본문을 가져와 푸터 유무를 판정하고, 없으면 덧붙이고 있으면 건너뛰며
+            <code>--force</code> 면 제자리 교체한다.</p>
+          </li>
+          <li>
+            <h4>요약 출력</h4>
+            <p>요약 줄과 컨텍스트용 메트릭 줄을 출력한다. <code>--limit</code> / <code>--budget</code> 으로
+            일찍 멈췄다면 재개 힌트를 덧붙인다.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="constraints" data-reveal>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">06</span><h2>주의사항 / 제약</h2></div>
+        <p class="sec-lede">백필 스킬로서 반드시 지켜지는 성질들.</p>
+
+        <div class="conlist">
+          <div class="con key">
+            <h4>멱등이다</h4>
+            <p>이미 <code>&lt;!-- ai-metrics --&gt;</code> 블록을 가진 카드는 건너뛴다. 같은 명령을 다시 돌려도
+            안전하며, 이 성질 자체가 <code>--limit</code> / <code>--budget</code> 중단 후의 재개 메커니즘이다.
+            별도의 <code>--resume</code> 플래그나 상태 파일이 없다.</p>
+          </div>
+          <div class="con key">
+            <h4>블록 바깥의 바이트는 절대 수정하지 않는다</h4>
+          </div>
+          <div class="con key">
+            <h4><code>--force</code> 는 무조건 덮어쓰기가 아니다</h4>
+            <p>재계산 후 교체다.</p>
+          </div>
+          <div class="con">
+            <h4>푸터 탐지는 단순 <code>grep</code> 이 아니다</h4>
+            <p>본문이 푸터 형식을 인용만 하고 있는 경우(예: 백틱 안의 마커)를 오탐하지 않도록,
+            <code>---</code> 구분선 뒤에 오는 실제 블록만 매칭한다.</p>
+          </div>
+          <div class="con">
+            <h4>카드 단위 실패는 로그만 남기고 루프를 계속한다</h4>
+          </div>
+          <div class="con">
+            <h4>모든 호출에 <code>--repo</code> 를 명시한다</h4>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p>출처: <code>docs/skill-guides/add-ai-metrics.md</code> — gh-setup 플러그인 스킬 설명서</p>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    var ICON_MOON = '<circle cx="10" cy="10" r="7"/><path d="M10 3a7 7 0 0 0 0 14z" fill="currentColor" stroke="none"/>';
+    var ICON_SUN  = '<circle cx="10" cy="10" r="4"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4 4l1.4 1.4M14.6 14.6L16 16M16 4l-1.4 1.4M5.4 14.6L4 16"/>';
+
+    // === Menu ===
+    function toggleMenu() {
+      var d = document.getElementById('vizMenuDropdown');
+      var t = document.getElementById('vizMenuToggle');
+      var open = d.classList.toggle('open');
+      t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.viz-menu')) {
+        document.getElementById('vizMenuDropdown').classList.remove('open');
+        document.getElementById('vizMenuToggle').setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.getElementById('vizMenuDropdown').classList.remove('open');
+        document.getElementById('vizMenuToggle').setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // === Theme ===
+    var savedTheme = null;
+    try { savedTheme = localStorage.getItem('viz-theme'); } catch (err) { savedTheme = null; }
+    var currentTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    function applyTheme(t) {
+      document.documentElement.className = 'theme-' + t;
+      var icon = document.getElementById('themeIcon');
+      var label = document.getElementById('themeLabel');
+      if (icon) icon.innerHTML = t === 'dark' ? ICON_SUN : ICON_MOON;
+      if (label) label.textContent = t === 'dark' ? '라이트 모드' : '다크 모드';
+      try { localStorage.setItem('viz-theme', t); } catch (err) {}
+      currentTheme = t;
+    }
+    function cycleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+    applyTheme(currentTheme);
+
+    // === Scroll reveal ===
+    document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); });
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+
+    // === Number counters ===
+    function animateCounters() {
+      document.querySelectorAll('[data-count]').forEach(function (el) {
+        if (el.dataset.counted) return;
+        el.dataset.counted = '1';
+        var target = parseFloat(el.dataset.count);
+        var start = performance.now(), duration = 1000;
+        (function tick(now) {
+          var p = Math.min((now - start) / duration, 1), eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(target * eased).toLocaleString();
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      });
+    }
+    var counterEl = document.querySelector('[data-count]');
+    if (counterEl) {
+      var cObs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { animateCounters(); cObs.disconnect(); } });
+      }, { threshold: 0.3 });
+      cObs.observe(counterEl);
+    }
+
+    // === Argument table filter ===
+    var argRows = Array.prototype.slice.call(document.querySelectorAll('#argBody tr:not(.empty-row)'));
+    function filterArgs(q) {
+      var needle = (q || '').trim().toLowerCase();
+      var shown = 0;
+      argRows.forEach(function (row) {
+        var hit = needle === '' || row.textContent.toLowerCase().indexOf(needle) !== -1;
+        row.hidden = !hit;
+        if (hit) shown++;
+      });
+      document.getElementById('argEmpty').hidden = shown !== 0;
+      document.getElementById('argCount').textContent = shown + '개 표시 중';
+    }
+
+    // === Copy usage ===
+    function copyUsage(btn) {
+      var text = document.getElementById('usageBlock').innerText;
+      var done = function () {
+        var prev = btn.textContent;
+        btn.textContent = '복사됨';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (err) {}
+        document.body.removeChild(ta);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>docs-bootstrap — 스킬 설명서</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ===== THEME TOKENS ===== */
+  /* 기본(클래스 미지정) = 시스템 설정 추종: prefers-color-scheme */
+  :root {
+    --bg: #f7f7f6;
+    --surface: #ffffff;
+    --surface-hover: #f2f2f1;
+    --surface-alt: #eeeeed;
+    --border: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(15, 23, 42, 0.20);
+    --text: #14181f;
+    --text-secondary: #5c6673;
+    --accent: #1f5fd0;
+    --accent-secondary: #6b3fc4;
+    --positive: #0b7a54;
+    --negative: #b8253f;
+    --warning: #9a6209;
+    --code-bg: #f1f1ef;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 10px 24px rgba(15,23,42,.07);
+  }
+  html:not(.theme-light):not(.theme-dark) { color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) {
+    html:not(.theme-light):not(.theme-dark) {
+      --bg: #0d1014;
+      --surface: #161b21;
+      --surface-hover: #1d232b;
+      --surface-alt: #1a2027;
+      --border: rgba(255, 255, 255, 0.10);
+      --border-strong: rgba(255, 255, 255, 0.22);
+      --text: #e8ecf1;
+      --text-secondary: #98a3b1;
+      --accent: #78a9ff;
+      --accent-secondary: #c0a0ff;
+      --positive: #5bd6a4;
+      --negative: #ff8098;
+      --warning: #e8b35c;
+      --code-bg: #10151b;
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 28px rgba(0,0,0,.42);
+    }
+  }
+  /* 명시 선택: 라이트 */
+  html.theme-light {
+    color-scheme: light;
+    --bg: #f7f7f6;
+    --surface: #ffffff;
+    --surface-hover: #f2f2f1;
+    --surface-alt: #eeeeed;
+    --border: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(15, 23, 42, 0.20);
+    --text: #14181f;
+    --text-secondary: #5c6673;
+    --accent: #1f5fd0;
+    --accent-secondary: #6b3fc4;
+    --positive: #0b7a54;
+    --negative: #b8253f;
+    --warning: #9a6209;
+    --code-bg: #f1f1ef;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 10px 24px rgba(15,23,42,.07);
+  }
+  /* 명시 선택: 다크 */
+  html.theme-dark {
+    color-scheme: dark;
+    --bg: #0d1014;
+    --surface: #161b21;
+    --surface-hover: #1d232b;
+    --surface-alt: #1a2027;
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.22);
+    --text: #e8ecf1;
+    --text-secondary: #98a3b1;
+    --accent: #78a9ff;
+    --accent-secondary: #c0a0ff;
+    --positive: #5bd6a4;
+    --negative: #ff8098;
+    --warning: #e8b35c;
+    --code-bg: #10151b;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 28px rgba(0,0,0,.42);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+                 "Noto Sans KR", "Malgun Gothic", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    transition: background .25s ease, color .25s ease;
+    overflow-x: hidden;
+  }
+  code, pre, .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                 "Liberation Mono", "DejaVu Sans Mono", monospace;
+    font-size: 0.94em;
+  }
+  h1, h2, h3, h4 { color: var(--text); line-height: 1.16; letter-spacing: -0.025em; text-wrap: balance; }
+  h1 { font-size: clamp(2.6rem, 6.4vw, 3.9rem); font-weight: 800; }
+  h2 { font-size: clamp(2rem, 3.6vw, 2.5rem); font-weight: 700; }
+  h3 { font-size: clamp(1.5rem, 2.2vw, 1.7rem); font-weight: 650; }
+  h4 { font-size: 1.06rem; font-weight: 650; letter-spacing: -0.01em; }
+  p, li { color: var(--text); }
+  a { color: var(--accent); }
+  .sec-text { color: var(--text-secondary); }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 40px); }
+
+  /* ===== HEADER ===== */
+  .masthead {
+    border-bottom: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 78%),
+      var(--surface);
+    padding: clamp(48px, 8vw, 84px) 0 clamp(36px, 5vw, 56px);
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: .78rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 14px; background: var(--bg);
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .masthead h1 { margin: 22px 0 0; }
+  .masthead h1 .mono { font-size: .82em; font-weight: 800; }
+  .lede {
+    margin-top: 20px; max-width: 62ch;
+    font-size: clamp(1.06rem, 1.7vw, 1.2rem);
+    color: var(--text-secondary); line-height: 1.7;
+  }
+  .lede strong { color: var(--text); font-weight: 700; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .tag {
+    font-size: .84rem; font-weight: 600; padding: 6px 13px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary);
+  }
+  .tag.is-accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+
+  /* ===== SECTION ===== */
+  section { padding: clamp(48px, 7vw, 76px) 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sec-num {
+    font-size: .82rem; font-weight: 800; letter-spacing: .12em;
+    color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    border-radius: 6px; padding: 3px 9px; background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .sec-sub { color: var(--text-secondary); max-width: 68ch; margin-bottom: 32px; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px;
+    transition: box-shadow .2s ease, border-color .2s ease;
+  }
+  .card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+  .grid { display: grid; gap: 18px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(288px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* ===== STAT ===== */
+  .stat .num {
+    font-size: clamp(2.3rem, 4.4vw, 3rem); font-weight: 800; line-height: 1;
+    letter-spacing: -0.04em; color: var(--accent); display: block;
+  }
+  .stat .num small { font-size: .42em; font-weight: 700; letter-spacing: -0.01em; margin-left: 4px; color: var(--text-secondary); }
+  .stat .lab { display: block; margin-top: 12px; font-weight: 650; font-size: 1rem; }
+  .stat .sub { display: block; margin-top: 4px; font-size: .92rem; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ===== TREE ===== */
+  .tree-layout { display: grid; gap: 20px; grid-template-columns: minmax(300px, 1.15fr) minmax(280px, 1fr); align-items: start; }
+  @media (max-width: 860px) { .tree-layout { grid-template-columns: 1fr; } }
+  .tree-card { padding: 0; overflow: hidden; }
+  .tree-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+    font-size: .82rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+  .tree-bar .sq { width: 9px; height: 9px; border-radius: 2px; background: var(--accent); }
+  pre.tree {
+    margin: 0; padding: 22px 20px; overflow-x: auto;
+    background: var(--code-bg); line-height: 1.95; font-size: .95rem;
+    color: var(--text-secondary); tab-size: 2;
+  }
+  pre.tree .root { color: var(--text); font-weight: 700; }
+  pre.tree .br { color: var(--border-strong); }
+  pre.tree .dir { color: var(--accent); font-weight: 650; }
+  pre.tree .keep { color: var(--text-secondary); opacity: .8; }
+  pre.tree .doc { color: var(--accent-secondary); font-weight: 650; }
+  pre.tree .row { display: block; }
+  pre.tree .row:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+
+  .leafgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .leaf {
+    border: 1px solid var(--border); border-radius: 9px; padding: 11px 12px;
+    background: var(--bg);
+  }
+  .leaf .n { font-weight: 700; font-size: .95rem; display: block; }
+  .leaf .k { font-size: .78rem; color: var(--text-secondary); }
+  .leaf.is-doc { border-color: color-mix(in srgb, var(--accent-secondary) 45%, var(--border)); }
+  .leaf.is-doc .n { color: var(--accent-secondary); }
+
+  .policy { display: grid; gap: 14px; }
+  .policy .rule {
+    display: flex; gap: 14px; align-items: flex-start;
+    border-left: 3px solid var(--accent); padding-left: 14px;
+  }
+  .policy .rule .k { font-weight: 750; white-space: nowrap; }
+
+  /* ===== USE / DONT USE ===== */
+  .verdict { display: flex; align-items: flex-start; gap: 14px; }
+  .mark {
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px;
+    display: grid; place-items: center; font-weight: 800; font-size: .95rem;
+    border: 1.5px solid currentColor;
+  }
+  .mark.yes { color: var(--positive); background: color-mix(in srgb, var(--positive) 12%, transparent); }
+  .mark.no  { color: var(--negative); background: color-mix(in srgb, var(--negative) 12%, transparent); }
+  .verdict .situation { font-weight: 650; line-height: 1.5; }
+  .verdict .instead { margin-top: 8px; font-size: .93rem; color: var(--text-secondary); }
+  .verdict .instead b { color: var(--text); font-weight: 650; }
+
+  .callout {
+    margin-top: 22px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+    border-radius: 12px; padding: 20px 24px;
+  }
+  .callout h4 { margin-bottom: 6px; color: var(--accent); }
+
+  /* ===== USAGE ===== */
+  pre.cmd {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; line-height: 1.7; color: var(--text);
+  }
+  pre.cmd .opt { color: var(--accent); }
+  pre.cmd .arg { color: var(--accent-secondary); }
+  .cmd-label { font-size: .82rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
+
+  /* interactive builder */
+  .builder { margin-top: 22px; }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 14px; }
+  .chip {
+    font: inherit; font-size: .92rem; font-weight: 650;
+    padding: 8px 15px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary);
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .chip:hover { border-color: var(--border-strong); color: var(--text); }
+  .chip[aria-pressed="true"] {
+    border-color: var(--accent); color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .chip[disabled] { opacity: .4; cursor: not-allowed; }
+  .chip:focus-visible, .viz-menu button:focus-visible, .skip-to-content:focus {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  #buildOut { font-size: 1.02rem; }
+  #buildNote { margin-top: 12px; color: var(--text-secondary); font-size: .95rem; }
+
+  /* ===== TABLE-LIKE ARG LIST ===== */
+  .args { display: grid; gap: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .args .row { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 18px; padding: 15px 20px; border-top: 1px solid var(--border); align-items: start; }
+  .args .row:first-child { border-top: none; }
+  .args .row:hover { background: var(--surface-hover); }
+  .args .row.is-active { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .args .k { font-weight: 700; color: var(--accent); word-break: break-word; }
+  .args .v { color: var(--text); }
+  .args .v b { font-weight: 750; }
+  @media (max-width: 620px) { .args .row { grid-template-columns: 1fr; gap: 6px; } }
+
+  .priority { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
+  .priority .step {
+    border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px 14px;
+    background: var(--surface); font-weight: 700;
+  }
+  .priority .step:first-child { border-color: var(--accent); color: var(--accent); }
+  .priority .gt { color: var(--text-secondary); font-weight: 800; }
+  .priority .cap { width: 100%; font-size: .9rem; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ===== STEPS ===== */
+  .steps { counter-reset: st; display: grid; gap: 16px; }
+  .steps .card { display: flex; gap: 18px; align-items: flex-start; }
+  .steps .card::before {
+    counter-increment: st; content: counter(st);
+    flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px;
+    display: grid; place-items: center; font-weight: 800; font-size: 1.05rem;
+    color: var(--accent); border: 1.5px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .steps h4 { margin-bottom: 4px; }
+  .steps p { color: var(--text-secondary); }
+  .steps p code, .args code, .verdict code, .policy code, .lede code, .note-list code, .callout code {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 5px; padding: 1px 6px; color: var(--text);
+  }
+
+  /* ===== NOTES ===== */
+  .note-list { display: grid; gap: 14px; }
+  .note {
+    border-left: 3px solid var(--warning); background: var(--surface);
+    border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    border-radius: 0 10px 10px 0; padding: 16px 20px;
+  }
+  .note.is-safe { border-left-color: var(--positive); }
+  .note h4 { margin-bottom: 4px; }
+  .note p { color: var(--text-secondary); }
+
+  /* ===== FOOTER ===== */
+  footer { padding: 34px 0 56px; color: var(--text-secondary); font-size: .92rem; }
+  footer .line { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+
+  /* ===== MENU ===== */
+  .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+  .viz-menu-toggle {
+    width: 42px; height: 42px; border-radius: 11px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border-strong); color: var(--text);
+    display: grid; place-items: center; box-shadow: var(--shadow);
+    transition: background .2s ease;
+  }
+  .viz-menu-toggle:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown {
+    position: absolute; top: 50px; right: 0; min-width: 214px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 12px; padding: 7px; box-shadow: var(--shadow);
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+  }
+  .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+  .viz-menu-dropdown button {
+    width: 100%; display: flex; align-items: center; gap: 11px;
+    padding: 10px 13px; border: none; border-radius: 8px; background: transparent;
+    color: var(--text); font: inherit; font-size: .92rem; cursor: pointer; text-align: left;
+  }
+  .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown .ic { width: 18px; text-align: center; color: var(--accent); font-weight: 800; }
+
+  .skip-to-content {
+    position: absolute; left: -9999px; top: 0;
+    background: var(--accent); color: #fff; padding: 9px 14px;
+    border-radius: 6px; text-decoration: none; z-index: 10000; font-weight: 650;
+  }
+  .skip-to-content:focus { left: 16px; top: 16px; position: fixed; }
+
+  /* ===== ANIMATION ===== */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+  .animate { animation: fadeInUp .6s ease-out both; }
+  .animate.delay-1 { animation-delay: .08s; }
+  .animate.delay-2 { animation-delay: .16s; }
+  .animate.delay-3 { animation-delay: .24s; }
+  .animate.delay-4 { animation-delay: .32s; }
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .55s ease, transform .55s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .viz-menu, .skip-to-content { display: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .card, .note, .args, .tree-card { break-inside: avoid; box-shadow: none !important; border-color: #ddd !important; }
+    section { break-inside: auto; border-bottom: 1px solid #ddd; }
+    pre.tree, pre.cmd { background: #f6f6f6 !important; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  @page { margin: 14mm; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+<div class="viz-menu">
+  <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-haspopup="true" aria-expanded="false" id="vizMenuToggle">
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+    </svg>
+  </button>
+  <div class="viz-menu-dropdown" id="vizMenuDropdown" role="menu">
+    <button onclick="cycleTheme()" role="menuitem" aria-label="테마 전환">
+      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 1 A6 6 0 0 0 7 13 Z" fill="currentColor"/></svg></span><span>테마: <span id="themeLabel">시스템</span></span>
+    </button>
+    <button onclick="window.print()" role="menuitem" aria-label="인쇄 또는 PDF 저장">
+      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/><line x1="4" y1="5" x2="10" y2="5"/><line x1="4" y1="8" x2="10" y2="8"/></svg></span><span>인쇄 / PDF 저장</span>
+    </button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="eyebrow animate"><span class="dot" aria-hidden="true"></span>gh-setup · 스킬 설명서</span>
+    <h1 class="animate delay-1"><span class="mono">docs-bootstrap</span></h1>
+    <p class="lede animate delay-2">
+      빈 repo 에 <strong>kind-split <code>docs/</code> 디렉터리 트리</strong>를 만든다.
+      8개 리프 폴더와 각각의 <code>.gitkeep</code>, 그리고 정책 문서 <code>docs/README.md</code> 가 산출물이다.
+    </p>
+    <div class="tagrow animate delay-3">
+      <span class="tag is-accent">스캐폴드 전용</span>
+      <span class="tag">기본 모드 --dry-run</span>
+      <span class="tag">네트워크 불필요</span>
+      <span class="tag">gh CLI 불필요</span>
+      <span class="tag">반복 실행 안전</span>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+
+  <!-- 1. 산출물 요약 -->
+  <section aria-labelledby="s-out">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2 id="s-out">무엇을 만들어 내는가</h2>
+      </div>
+      <p class="sec-sub">
+        정책은 <b>폴더 = 문서 종류, 기능 = 파일 이름</b>이다. 폴더는 비어 있고,
+        git 이 빈 폴더를 추적하도록 리프마다 <code>.gitkeep</code> 이 들어간다.
+      </p>
+
+      <div class="grid g4" style="margin-bottom: 26px;" data-reveal>
+        <div class="card stat">
+          <span class="num" data-count="8">8</span>
+          <span class="lab">리프 폴더</span>
+          <span class="sub">adr · product · design · architecture/system · architecture/features · testing · guides · public</span>
+        </div>
+        <div class="card stat">
+          <span class="num" data-count="8">8</span>
+          <span class="lab"><code>.gitkeep</code></span>
+          <span class="sub">리프마다 하나. 빈 폴더를 git 이 추적하게 한다.</span>
+        </div>
+        <div class="card stat">
+          <span class="num" data-count="1">1</span>
+          <span class="lab">정책 문서</span>
+          <span class="sub"><code>docs/README.md</code> — 스킬이 본문을 쓰는 유일한 파일.</span>
+        </div>
+        <div class="card stat">
+          <span class="num" data-count="0">0</span>
+          <span class="lab">네트워크 호출</span>
+          <span class="sub">셸과 쓰기 가능한 디렉터리만 있으면 된다.</span>
+        </div>
+      </div>
+
+      <div class="tree-layout">
+        <div class="card tree-card" data-reveal>
+          <div class="tree-bar"><span class="sq" aria-hidden="true"></span>산출 트리</div>
+<pre class="tree" role="img" aria-label="docs 디렉터리 트리: adr, product, design, architecture/system, architecture/features, testing, guides, public 각각에 .gitkeep 이 있고 docs/README.md 가 있다."><span class="row"><span class="root">docs/</span></span><span class="row"><span class="br">├── </span><span class="dir">adr/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">product/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">design/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">architecture/system/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">architecture/features/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">testing/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">guides/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">├── </span><span class="dir">public/</span><span class="keep">.gitkeep</span></span><span class="row"><span class="br">└── </span><span class="doc">README.md</span></span></pre>
+        </div>
+
+        <div style="display: grid; gap: 18px;" data-reveal>
+          <div class="card">
+            <h4 style="margin-bottom: 14px;">리프 8 + 문서 1</h4>
+            <div class="leafgrid">
+              <div class="leaf"><span class="n">adr/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">product/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">design/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">testing/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">guides/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">public/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">architecture/<wbr>system/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf"><span class="n">architecture/<wbr>features/</span><span class="k">.gitkeep</span></div>
+              <div class="leaf is-doc"><span class="n">README.md</span><span class="k">정책 문서</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="policy">
+              <div class="rule"><span class="k">폴더</span><span class="sec-text">문서 <b style="color:var(--text)">종류</b>를 나타낸다.</span></div>
+              <div class="rule"><span class="k">파일 이름</span><span class="sec-text">개별 <b style="color:var(--text)">기능</b>을 나타낸다.</span></div>
+              <div class="rule"><span class="k">.gitkeep</span><span class="sec-text">실제 문서가 들어오면 지워도 된다.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 언제 쓰고 언제 안 쓰는가 -->
+  <section aria-labelledby="s-when">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2 id="s-when">언제 쓰고 언제 안 쓰는가</h2>
+      </div>
+      <p class="sec-sub">이 스킬이 맡는 범위는 하나다 — 빈 골격 세우기. 나머지는 다른 도구의 몫이다.</p>
+
+      <div class="grid g2" data-reveal>
+        <div class="card">
+          <div class="verdict">
+            <span class="mark yes" aria-hidden="true">Y</span>
+            <div>
+              <div class="situation">새 repo 에 문서 골격을 깐다</div>
+              <div class="instead">이 스킬 — <b>예</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="verdict">
+            <span class="mark no" aria-hidden="true">N</span>
+            <div>
+              <div class="situation">이미 문서가 들어 있는 <code>docs/</code> 를 재배치한다</div>
+              <div class="instead">대신 <b>수동 마이그레이션</b> (이 스킬은 스캐폴드 전용)</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="verdict">
+            <span class="mark no" aria-hidden="true">N</span>
+            <div>
+              <div class="situation">PRD / TRD / ADR 본문을 쓴다</div>
+              <div class="instead">대신 <b>별도 문서 작성 스킬</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="verdict">
+            <span class="mark no" aria-hidden="true">N</span>
+            <div>
+              <div class="situation">라벨이나 보드가 필요하다</div>
+              <div class="instead">대신 <b><code>label-bootstrap</code></b>, <b><code>kanban-bootstrap</code></b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" data-reveal>
+        <h4>네 스킬 중 유일하게 네트워크도 <code>gh</code> 도 필요 없다</h4>
+        <p class="sec-text">셸과 쓰기 가능한 디렉터리만 있으면 된다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 호출 형식 -->
+  <section aria-labelledby="s-usage">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2 id="s-usage">호출 형식</h2>
+      </div>
+      <p class="sec-sub">스킬로 부르거나, 같은 인자를 그대로 셸 스크립트에 넘긴다.</p>
+
+      <div class="grid g2" style="margin-bottom: 26px;" data-reveal>
+        <div>
+          <div class="cmd-label">스킬 호출</div>
+<pre class="cmd">/gh-setup:docs-bootstrap <span class="arg">[path]</span> <span class="opt">[--check|--apply|--dry-run]</span> <span class="opt">[--force]</span></pre>
+        </div>
+        <div>
+          <div class="cmd-label">셸에서 직접</div>
+<pre class="cmd">bash skills/docs-bootstrap/lib/scaffold.sh <span class="arg">[path]</span> <span class="opt">[--check|--apply|--dry-run]</span> <span class="opt">[--force]</span></pre>
+        </div>
+      </div>
+
+      <div class="args" id="argTable" data-reveal>
+        <div class="row" data-arg="path">
+          <div class="k mono">path</div>
+          <div class="v">대상 repo 루트. 기본은 현재 디렉터리. 그 아래에 <code>docs/</code> 를 만든다.</div>
+        </div>
+        <div class="row" data-arg="--dry-run">
+          <div class="k mono">--dry-run</div>
+          <div class="v"><b>기본값.</b> 생성 계획만 출력하고 아무것도 쓰지 않는다. 항상 0 으로 종료.</div>
+        </div>
+        <div class="row" data-arg="--check">
+          <div class="k mono">--check</div>
+          <div class="v">읽기 전용 감사. 완비면 0, 하나라도 빠지면 0 이 아닌 값으로 종료 — CI 게이트용.</div>
+        </div>
+        <div class="row" data-arg="--apply">
+          <div class="k mono">--apply</div>
+          <div class="v">디렉터리, <code>.gitkeep</code>, <code>docs/README.md</code> 를 실제로 만든다.</div>
+        </div>
+        <div class="row" data-arg="--force">
+          <div class="k mono">--force</div>
+          <div class="v"><code>--apply</code> 와 함께 쓸 때만 유효. 기존 <code>docs/README.md</code> 를 덮어쓴다.</div>
+        </div>
+        <div class="row" data-arg="--help">
+          <div class="k mono">-h, --help</div>
+          <div class="v">도움말 출력 후 종료. <b>파일 시스템에 접근하지 않는다.</b></div>
+        </div>
+      </div>
+
+      <div class="priority" data-reveal>
+        <span class="step mono">--help</span><span class="gt" aria-hidden="true">&gt;</span>
+        <span class="step mono">--check</span><span class="gt" aria-hidden="true">&gt;</span>
+        <span class="step mono">--apply</span><span class="gt" aria-hidden="true">&gt;</span>
+        <span class="step mono">--dry-run</span>
+        <span class="cap">모드 우선순위 — 여러 개가 함께 오면 왼쪽이 이긴다.</span>
+      </div>
+
+      <div class="card builder" data-reveal>
+        <h4 style="margin-bottom: 12px;">모드를 골라 명령을 만들어 보기</h4>
+        <div class="chiprow" role="group" aria-label="모드 선택">
+          <button type="button" class="chip" data-mode="--dry-run" aria-pressed="true" onclick="pickMode('--dry-run')">--dry-run</button>
+          <button type="button" class="chip" data-mode="--check" aria-pressed="false" onclick="pickMode('--check')">--check</button>
+          <button type="button" class="chip" data-mode="--apply" aria-pressed="false" onclick="pickMode('--apply')">--apply</button>
+          <button type="button" class="chip" data-mode="--help" aria-pressed="false" onclick="pickMode('--help')">--help</button>
+          <button type="button" class="chip" id="forceChip" data-mode="--force" aria-pressed="false" onclick="toggleForce()" disabled>--force</button>
+        </div>
+        <pre class="cmd" id="buildOut" aria-live="polite">bash skills/docs-bootstrap/lib/scaffold.sh . <span class="opt">--dry-run</span></pre>
+        <p id="buildNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 동작 단계 -->
+  <section aria-labelledby="s-steps">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2 id="s-steps">동작 단계</h2>
+      </div>
+      <p class="sec-sub">세 단계로 끝난다. 판정과 계획은 스크립트가 내고, 스킬은 그대로 전달한다.</p>
+
+      <div class="steps" data-reveal>
+        <div class="card">
+          <div>
+            <h4>인자 파싱</h4>
+            <p>인자를 파싱해 대상 경로와 모드를 정한다.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div>
+            <h4><code>lib/scaffold.sh</code> 실행</h4>
+            <p>레이아웃 SSOT 는 이 스크립트, README 본문 SSOT 는 <code>references/docs-readme-template.md</code> 다.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div>
+            <h4>결과 전달</h4>
+            <p>스크립트의 <code>[OK]</code> / <code>[FAIL]</code> 판정과 create/skip 계획을 그대로 전달하고, 다음 단계 힌트로 마무리한다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 주의사항 -->
+  <section aria-labelledby="s-notes">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <h2 id="s-notes">주의사항 / 제약</h2>
+      </div>
+      <p class="sec-sub">쓰기는 언제나 명시적이어야 하고, 기존 내용은 건드리지 않는다.</p>
+
+      <div class="note-list" data-reveal>
+        <div class="note">
+          <h4>기본이 <code>--dry-run</code> 이다</h4>
+          <p><code>--apply</code> 를 명시해야만 파일이 생긴다.</p>
+        </div>
+        <div class="note">
+          <h4><code>docs/README.md</code> 를 <code>--force</code> 없이 덮어쓰지 않는다</h4>
+          <p>기존 README 는 보존된다.</p>
+        </div>
+        <div class="note">
+          <h4>문서 본문을 쓰지 않는다</h4>
+          <p><code>docs/README.md</code> 하나가 예외이고, 나머지 폴더는 비어 있는 상태로 남는다.</p>
+        </div>
+        <div class="note">
+          <h4>이미 채워진 <code>docs/</code> 를 이전하지 않는다</h4>
+          <p>기존 경로는 <code>skip</code> 줄로 넘어간다. 즉 여러 번 실행해도 안전하다.</p>
+        </div>
+        <div class="note is-safe">
+          <h4><code>.gitkeep</code> 은 지워도 된다</h4>
+          <p>빈 폴더를 유지하는 <code>.gitkeep</code> 은 실제 문서가 들어오면 지워도 된다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="line">
+        <span><b style="color:var(--text)">docs-bootstrap</b> — gh-setup 플러그인 스킬 설명서</span>
+        <span class="mono">docs/skill-guides/docs-bootstrap.md</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  // ===== Menu =====
+  var vizDropdown = document.getElementById('vizMenuDropdown');
+  var vizToggle = document.getElementById('vizMenuToggle');
+  function toggleMenu() {
+    var open = vizDropdown.classList.toggle('open');
+    vizToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function closeMenu() {
+    vizDropdown.classList.remove('open');
+    vizToggle.setAttribute('aria-expanded', 'false');
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.viz-menu')) closeMenu();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeMenu();
+  });
+
+  // ===== Theme: 시스템(prefers-color-scheme) -> 라이트 -> 다크 =====
+  var THEMES = ['auto', 'light', 'dark'];
+  var THEME_LABEL = { auto: '시스템', light: '라이트', dark: '다크' };
+  var currentTheme = 'auto';
+  try { currentTheme = localStorage.getItem('docs-bootstrap-theme') || 'auto'; } catch (e) { currentTheme = 'auto'; }
+  if (THEMES.indexOf(currentTheme) === -1) currentTheme = 'auto';
+
+  function applyTheme(t) {
+    var root = document.documentElement;
+    root.classList.remove('theme-light', 'theme-dark');
+    if (t === 'light') root.classList.add('theme-light');
+    if (t === 'dark') root.classList.add('theme-dark');
+    currentTheme = t;
+    var label = document.getElementById('themeLabel');
+    if (label) label.textContent = THEME_LABEL[t];
+    try { localStorage.setItem('docs-bootstrap-theme', t); } catch (e) {}
+  }
+  function cycleTheme() {
+    applyTheme(THEMES[(THEMES.indexOf(currentTheme) + 1) % THEMES.length]);
+  }
+  applyTheme(currentTheme);
+
+  // ===== Command builder =====
+  var buildMode = '--dry-run';
+  var buildForce = false;
+  var MODE_NOTE = {
+    '--dry-run': '기본값. 생성 계획만 출력하고 아무것도 쓰지 않는다. 항상 0 으로 종료.',
+    '--check': '읽기 전용 감사. 완비면 0, 하나라도 빠지면 0 이 아닌 값으로 종료 — CI 게이트용.',
+    '--apply': '디렉터리, .gitkeep, docs/README.md 를 실제로 만든다.',
+    '--help': '도움말 출력 후 종료. 파일 시스템에 접근하지 않는다.'
+  };
+  function renderBuild() {
+    var out = document.getElementById('buildOut');
+    var note = document.getElementById('buildNote');
+    var forceChip = document.getElementById('forceChip');
+    var cmd = 'bash skills/docs-bootstrap/lib/scaffold.sh ';
+    var flags = '<span class="opt">' + buildMode + '</span>';
+    if (buildMode === '--help') {
+      out.innerHTML = cmd + flags;
+    } else {
+      if (buildMode === '--apply' && buildForce) flags += ' <span class="opt">--force</span>';
+      out.innerHTML = cmd + '<span class="arg">.</span> ' + flags;
+    }
+    var text = MODE_NOTE[buildMode];
+    if (buildMode === '--apply' && buildForce) {
+      text += ' --force 는 --apply 와 함께 쓸 때만 유효하며, 기존 docs/README.md 를 덮어쓴다.';
+    }
+    note.textContent = text;
+
+    forceChip.disabled = (buildMode !== '--apply');
+    forceChip.setAttribute('aria-pressed', (buildMode === '--apply' && buildForce) ? 'true' : 'false');
+
+    document.querySelectorAll('.chip[data-mode]').forEach(function (c) {
+      if (c.id === 'forceChip') return;
+      c.setAttribute('aria-pressed', c.dataset.mode === buildMode ? 'true' : 'false');
+    });
+    document.querySelectorAll('#argTable .row').forEach(function (r) {
+      var on = (r.dataset.arg === buildMode) ||
+               (buildMode === '--apply' && buildForce && r.dataset.arg === '--force');
+      r.classList.toggle('is-active', on);
+    });
+  }
+  function pickMode(m) {
+    buildMode = m;
+    if (m !== '--apply') buildForce = false;
+    renderBuild();
+  }
+  function toggleForce() {
+    if (buildMode !== '--apply') return;
+    buildForce = !buildForce;
+    renderBuild();
+  }
+  renderBuild();
+
+  // ===== Scroll reveal (JS 없으면 콘텐츠는 그대로 보인다) =====
+  document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); });
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+
+  // ===== Number counters =====
+  function animateCounters() {
+    document.querySelectorAll('[data-count]').forEach(function (el) {
+      if (el.dataset.counted) return;
+      el.dataset.counted = '1';
+      var target = parseFloat(el.dataset.count);
+      var start = performance.now(), duration = 900;
+      (function tick(now) {
+        var p = Math.min((now - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+  var counterEl = document.querySelector('[data-count]');
+  if (counterEl) {
+    var cObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { animateCounters(); cObs.disconnect(); } });
+    }, { threshold: 0.3 });
+    cObs.observe(counterEl);
+  }
+</script>
+</body>
+</html>

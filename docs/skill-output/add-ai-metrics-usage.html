@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>add-ai-metrics 사용 결과</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ===== THEME TOKENS =====
+     기본값은 라이트. prefers-color-scheme: dark 로 다크 자동 전환.
+     사용자가 메뉴에서 명시적으로 고르면 html.theme-light / html.theme-dark 가 우선. */
+  :root {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4; --surface-alt: #F1F5F9;
+    --border: rgba(15, 23, 42, 0.10); --border-strong: rgba(15, 23, 42, 0.22);
+    --text: #0f172a; --text-secondary: #576375;
+    --accent: #2563eb; --accent-secondary: #7c3aed;
+    --positive: #059669; --negative: #e11d48; --warning: #b45309;
+    --skip: #b45309; --skip-soft: rgba(180, 83, 9, 0.10);
+    --accent-soft: rgba(37, 99, 235, 0.10);
+    --console-bg: #1b2230; --console-text: #e4e9f2; --console-dim: #97a3b6;
+    --console-border: rgba(255, 255, 255, 0.10);
+    --shadow: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0A0A0A; --surface: #141414; --surface-hover: #1C1C1C; --surface-alt: #191919;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.24);
+      --text: #EDEDED; --text-secondary: #9aa3ad;
+      --accent: #60a5fa; --accent-secondary: #a78bfa;
+      --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+      --skip: #fbbf24; --skip-soft: rgba(251, 191, 36, 0.12);
+      --accent-soft: rgba(96, 165, 250, 0.12);
+      --console-bg: #0d1117; --console-text: #e6edf3; --console-dim: #8b949e;
+      --console-border: rgba(255,255,255,0.09);
+      --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  html.theme-light {
+    --bg: #FAFAF9; --surface: #FFFFFF; --surface-hover: #F5F5F4; --surface-alt: #F1F5F9;
+    --border: rgba(15, 23, 42, 0.10); --border-strong: rgba(15, 23, 42, 0.22);
+    --text: #0f172a; --text-secondary: #576375;
+    --accent: #2563eb; --accent-secondary: #7c3aed;
+    --positive: #059669; --negative: #e11d48; --warning: #b45309;
+    --skip: #b45309; --skip-soft: rgba(180, 83, 9, 0.10);
+    --accent-soft: rgba(37, 99, 235, 0.10);
+    --console-bg: #1b2230; --console-text: #e4e9f2; --console-dim: #97a3b6;
+    --console-border: rgba(255, 255, 255, 0.10);
+    --shadow: 0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.06);
+  }
+  html.theme-dark {
+    --bg: #0A0A0A; --surface: #141414; --surface-hover: #1C1C1C; --surface-alt: #191919;
+    --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.24);
+    --text: #EDEDED; --text-secondary: #9aa3ad;
+    --accent: #60a5fa; --accent-secondary: #a78bfa;
+    --positive: #34d399; --negative: #fb7185; --warning: #fbbf24;
+    --skip: #fbbf24; --skip-soft: rgba(251, 191, 36, 0.12);
+    --accent-soft: rgba(96, 165, 250, 0.12);
+    --console-bg: #0d1117; --console-text: #e6edf3; --console-dim: #8b949e;
+    --console-border: rgba(255,255,255,0.09);
+    --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  /* ===== BASE ===== */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+                 "Noto Sans KR", "Malgun Gothic", system-ui, Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em; font-size: 16px;
+    transition: background 0.25s, color 0.25s;
+    scrollbar-gutter: stable;
+    overflow-wrap: break-word;
+  }
+  .mono, code, pre, kbd {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                 "Liberation Mono", "D2Coding", monospace;
+    font-variant-ligatures: none;
+  }
+  h1, h2, h3 { color: var(--text); letter-spacing: -0.025em; line-height: 1.15; text-wrap: balance; }
+  h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 650; }
+  h3 { font-size: 1.5rem; font-weight: 600; }
+  p, li { color: var(--text); }
+  .text-secondary { color: var(--text-secondary); }
+  a { color: var(--accent); }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 20px; }
+  main { padding-bottom: 72px; }
+  section { margin-top: 56px; }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+
+  /* ===== HEADER ===== */
+  header.page-head { padding: 64px 0 8px; border-bottom: 1px solid var(--border); }
+  .eyebrow {
+    display: inline-block; font-size: 0.8125rem; font-weight: 600;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 999px; padding: 5px 12px; margin-bottom: 18px;
+  }
+  .summary {
+    margin: 20px 0 40px; padding: 16px 20px;
+    border-left: 3px solid var(--accent);
+    background: var(--surface-alt); border-radius: 0 8px 8px 0;
+    font-size: 1.0625rem;
+  }
+  .summary strong { font-weight: 650; }
+
+  /* ===== PIPELINE ===== */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 12px;
+    margin: 8px 0 56px; flex-wrap: nowrap;
+  }
+  .pipe-node {
+    flex: 1 1 0; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 16px; text-align: center;
+    display: flex; flex-direction: column; gap: 8px; justify-content: center;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .pipe-node:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
+  .pipe-node.is-skill { border-color: var(--accent); border-width: 2px; background: var(--accent-soft); }
+  .pipe-label {
+    font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-secondary);
+  }
+  .pipe-node.is-skill .pipe-label { color: var(--accent); }
+  .pipe-title { font-size: 0.9375rem; font-weight: 600; line-height: 1.4; }
+  .pipe-node.is-skill .pipe-title { font-size: 0.9375rem; }
+  .pipe-arrow {
+    flex: 0 0 34px; display: flex; align-items: center; justify-content: center;
+    color: var(--border-strong);
+  }
+  .pipe-arrow svg { display: block; }
+  @media (max-width: 640px) {
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { flex-basis: 26px; transform: rotate(90deg); }
+  }
+
+  /* ===== SECTION HEADING ===== */
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
+  .sec-num {
+    flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--text); color: var(--bg);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.875rem; font-weight: 700; align-self: center;
+  }
+
+  /* ===== CODE / COMMAND ===== */
+  .cmd-label {
+    font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .cmd-block {
+    position: relative; background: var(--surface-alt);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 92px 14px 16px; margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .cmd-block.is-actual { border-color: var(--accent); background: var(--accent-soft); }
+  .cmd-block pre { font-size: 0.9375rem; line-height: 1.7; white-space: pre; }
+  .cmd-block .opt { color: var(--text-secondary); }
+  .cmd-block .flag { color: var(--accent); font-weight: 600; }
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    font: inherit; font-size: 0.75rem; font-weight: 600;
+    padding: 5px 11px; border-radius: 6px; cursor: pointer;
+    background: var(--surface); color: var(--text-secondary);
+    border: 1px solid var(--border-strong);
+    transition: background 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { background: var(--surface-hover); color: var(--text); }
+  .copy-btn.done { color: var(--positive); border-color: var(--positive); }
+
+  /* ===== INPUT CARDS ===== */
+  .targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .target-card { display: flex; flex-direction: column; gap: 6px; }
+  .kind {
+    align-self: flex-start; font-size: 0.6875rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 5px;
+    background: var(--surface-alt); color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .target-num { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+  .target-repo { font-size: 0.8125rem; color: var(--text-secondary); }
+  .note { margin-top: 18px; font-size: 0.9375rem; color: var(--text-secondary); }
+
+  /* ===== STATS ===== */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat { text-align: center; padding: 20px 14px; }
+  .stat-val { font-size: 2.5rem; font-weight: 700; line-height: 1; letter-spacing: -0.04em; }
+  .stat-key { margin-top: 8px; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); }
+  .stat.is-skip .stat-val { color: var(--skip); }
+  .stat.is-skip { background: var(--skip-soft); border-color: var(--skip); }
+  .stat.is-zero .stat-val { color: var(--text-secondary); }
+
+  /* ===== CONSOLE ===== */
+  .console {
+    background: var(--console-bg); border: 1px solid var(--console-border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 24px;
+  }
+  .console-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px; border-bottom: 1px solid var(--console-border);
+    background: rgba(255,255,255,0.03);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--console-dim); opacity: 0.45; }
+  .console-name {
+    margin-left: 6px; font-size: 0.75rem; letter-spacing: 0.04em;
+    color: var(--console-dim);
+  }
+  .console-body {
+    padding: 16px 18px; overflow-x: auto;
+    font-size: 0.875rem; line-height: 1.85; color: var(--console-text);
+  }
+  .console-body pre { white-space: pre; }
+  .console-body .l-skip { color: var(--console-dim); }
+  .console-body .l-skip .tag { color: #f0b429; font-weight: 700; }
+  .console-body .l-skip .id { color: var(--console-text); font-weight: 600; }
+  .console-body .l-sum { color: var(--console-text); font-weight: 700; }
+  .console-body .l-meta { color: var(--console-dim); }
+
+  .verdict {
+    border-left: 3px solid var(--skip); background: var(--skip-soft);
+    border-radius: 0 8px 8px 0; padding: 18px 20px;
+  }
+  .verdict h3 { font-size: 1.0625rem; margin-bottom: 8px; }
+  .verdict p + p { margin-top: 10px; }
+  .idem-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  .chip {
+    font-size: 0.8125rem; font-weight: 600; padding: 4px 10px;
+    border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--surface); color: var(--text-secondary);
+  }
+
+  footer.page-foot {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 0.8125rem; color: var(--text-secondary);
+  }
+
+  /* ===== MENU ===== */
+  .viz-menu { position: fixed; top: 16px; right: 16px; z-index: 9999; }
+  .viz-menu-toggle {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    color: var(--text); cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: background 0.2s;
+  }
+  .viz-menu-toggle:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown {
+    position: absolute; top: 52px; right: 0; min-width: 190px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 12px; padding: 8px; box-shadow: var(--shadow);
+    opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s;
+  }
+  .viz-menu-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+  .viz-menu-dropdown button {
+    width: 100%; padding: 10px 12px; border: none; border-radius: 8px;
+    background: transparent; color: var(--text); font: inherit; font-size: 0.875rem;
+    cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;
+    transition: background 0.15s;
+  }
+  .viz-menu-dropdown button:hover { background: var(--surface-hover); }
+  .viz-menu-dropdown svg { flex: 0 0 16px; }
+
+  /* ===== ANIMATION ===== */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate { animation: fadeInUp 0.55s ease-out both; }
+  .animate.delay-1 { animation-delay: 0.08s; }
+  .animate.delay-2 { animation-delay: 0.16s; }
+  .animate.delay-3 { animation-delay: 0.24s; }
+  .animate.delay-4 { animation-delay: 0.32s; }
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.55s ease, transform 0.55s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .viz-menu, .copy-btn { display: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .card, .console, .pipe-node { break-inside: avoid; box-shadow: none; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  @page { margin: 18mm; }
+
+  .skip-to-content {
+    position: absolute; top: -60px; left: 6px; background: var(--accent);
+    color: #fff; padding: 8px 14px; text-decoration: none; border-radius: 6px;
+    z-index: 10000; transition: top 0.2s;
+  }
+  .skip-to-content:focus { top: 6px; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">본문으로 건너뛰기</a>
+
+<div class="viz-menu">
+  <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴 열기" aria-haspopup="true">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+    </svg>
+  </button>
+  <div class="viz-menu-dropdown" id="vizMenuDropdown" role="menu">
+    <button onclick="cycleTheme()" role="menuitem">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <circle cx="8" cy="8" r="3.2"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1"/>
+      </svg>
+      <span id="themeLabel">테마 전환</span>
+    </button>
+    <button onclick="window.print()" role="menuitem">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.5 6V1.8h7V6"/><rect x="1.8" y="6" width="12.4" height="5.5" rx="1.2"/><path d="M4.5 9.5h7v4.7h-7z"/>
+      </svg>
+      <span>인쇄 / PDF</span>
+    </button>
+  </div>
+</div>
+
+<main id="main-content">
+<div class="wrap">
+
+  <header class="page-head">
+    <span class="eyebrow animate">skill output</span>
+    <h1 class="animate delay-1">add-ai-metrics 사용 결과</h1>
+    <p class="summary animate delay-2">
+      <strong>한 줄 요약</strong> — 이슈/PR 번호 목록을 받아 각 카드 본문에 붙일 메트릭 푸터 블록을 생성합니다.
+    </p>
+  </header>
+
+  <!-- PIPELINE -->
+  <section aria-label="파이프라인" style="margin-top: 0;">
+    <div class="pipeline animate delay-3">
+      <div class="pipe-node">
+        <span class="pipe-label">입력</span>
+        <span class="pipe-title mono">issue#N / pr#M 목록</span>
+      </div>
+      <div class="pipe-arrow" aria-hidden="true">
+        <svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="7" x2="24" y2="7"/><polyline points="19,2 25,7 19,12"/>
+        </svg>
+      </div>
+      <div class="pipe-node is-skill">
+        <span class="pipe-label">스킬</span>
+        <span class="pipe-title mono">/gh-setup:add-ai-metrics</span>
+      </div>
+      <div class="pipe-arrow" aria-hidden="true">
+        <svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="7" x2="24" y2="7"/><polyline points="19,2 25,7 19,12"/>
+        </svg>
+      </div>
+      <div class="pipe-node">
+        <span class="pipe-label">산출물</span>
+        <span class="pipe-title">카드 본문의 ai-metrics 푸터</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. 실행한 명령 -->
+  <section data-reveal aria-labelledby="sec-cmd">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">1</span>
+      <h2 id="sec-cmd">실행한 명령</h2>
+    </div>
+
+    <p class="cmd-label">범용 형식</p>
+    <div class="cmd-block">
+      <button class="copy-btn" type="button" onclick="copyCmd(this)" aria-label="범용 형식 복사">복사</button>
+      <pre class="mono"><code>/gh-setup:add-ai-metrics <span class="opt">[&lt;targets&gt;] [--type issue|PR] [--date &lt;date&gt;] [--dry-run] [--force]</span></code></pre>
+    </div>
+
+    <p class="cmd-label">이번 예시에 실제로 쓴 명령 (드라이런 &mdash; <code class="mono">gh edit</code> 호출 0회, view 만 수행)</p>
+    <div class="cmd-block is-actual">
+      <button class="copy-btn" type="button" onclick="copyCmd(this)" aria-label="실행한 명령 복사">복사</button>
+      <pre class="mono"><code>/gh-setup:add-ai-metrics issue#1410 pr#320 issue#317 <span class="flag">--dry-run</span></code></pre>
+    </div>
+  </section>
+
+  <!-- 2. 입력 -->
+  <section data-reveal aria-labelledby="sec-in">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">2</span>
+      <h2 id="sec-in">입력</h2>
+    </div>
+
+    <p class="text-secondary" style="margin-bottom:16px;">대상 카드 3건 &mdash; <code class="mono">dEitY719/dotfiles</code></p>
+
+    <div class="targets">
+      <article class="card target-card">
+        <span class="kind">issue</span>
+        <span class="target-num mono">#1410</span>
+        <span class="target-repo mono">dEitY719/dotfiles</span>
+      </article>
+      <article class="card target-card">
+        <span class="kind">PR</span>
+        <span class="target-num mono">#320</span>
+        <span class="target-repo mono">dEitY719/dotfiles</span>
+      </article>
+      <article class="card target-card">
+        <span class="kind">issue</span>
+        <span class="target-num mono">#317</span>
+        <span class="target-repo mono">dEitY719/dotfiles</span>
+      </article>
+    </div>
+
+    <p class="note">
+      이 repo(<code class="mono">gh-setup-skills</code>)는 아직 이슈도 PR 도 0건이라 백필할 카드가 없어,
+      실제 카드가 있는 형제 repo 를 읽기 전용으로 대상 삼았습니다.
+    </p>
+  </section>
+
+  <!-- 3. 결과 -->
+  <section data-reveal aria-labelledby="sec-out">
+    <div class="sec-head">
+      <span class="sec-num" aria-hidden="true">3</span>
+      <h2 id="sec-out">결과</h2>
+    </div>
+
+    <div class="stats">
+      <div class="card stat">
+        <div class="stat-val mono" data-count="3">3</div>
+        <div class="stat-key">cards</div>
+      </div>
+      <div class="card stat is-zero">
+        <div class="stat-val mono" data-count="0">0</div>
+        <div class="stat-key">will-write</div>
+      </div>
+      <div class="card stat is-zero">
+        <div class="stat-val mono" data-count="0">0</div>
+        <div class="stat-key">will-force-replace</div>
+      </div>
+      <div class="card stat is-skip">
+        <div class="stat-val mono" data-count="3">3</div>
+        <div class="stat-key">will-skip</div>
+      </div>
+    </div>
+
+    <div class="console">
+      <div class="console-bar" aria-hidden="true">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="console-name mono">DRY RUN output</span>
+      </div>
+      <div class="console-body">
+<pre><span class="l-skip">· <span class="tag">will-skip</span>  <span class="id">#1410</span> feat(skills): claude/skills 71종을 6-하네스 지원 15개 마켓플레이스 repo 로 분리</span>
+<span class="l-skip">· <span class="tag">will-skip</span>  <span class="id">#320</span> Add AI work-metrics footer to GitHub Issues and PRs</span>
+<span class="l-skip">· <span class="tag">will-skip</span>  <span class="id">#317</span> feat(gh-issue-create,gh-issue-flow): GitHub Issue/PR에 AI 작업 메트릭(토큰·시간) 자동 기록 시스템</span>
+
+<span class="l-sum">DRY RUN: 3 cards (0 will-write, 0 will-force-replace, 3 will-skip)</span>
+<span class="l-meta">         pace=unset budget=unset limit=unset</span>
+<span class="l-meta">         estimated wall-clock: &lt;1m (no pace)</span></pre>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <h3>세 카드 모두 이미 푸터를 갖고 있어 <code class="mono">will-skip</code> 으로 분류</h3>
+      <p>
+        이것이 바로 이 스킬의 멱등성 계약이 눈에 보이는 형태입니다 &mdash; 백필이 끝난 repo 에
+        같은 명령을 다시 던져도 쓰기는 한 건도 발생하지 않습니다.
+      </p>
+      <p>실제로 같은 판정 로직을 다음 카드에도 돌려봤고 다섯 건 모두 <code class="mono">will-skip</code> 이었습니다.</p>
+      <div class="idem-list">
+        <span class="chip mono">#10</span>
+        <span class="chip mono">#50</span>
+        <span class="chip mono">#100</span>
+        <span class="chip mono">#200</span>
+        <span class="chip mono">#250</span>
+      </div>
+      <p>푸터를 새로 붙이려면 아직 백필되지 않은 카드가 필요합니다.</p>
+    </div>
+  </section>
+
+  <footer class="page-foot">
+    <p>출처: <code class="mono">docs/skill-output/add-ai-metrics-usage.md</code> &mdash; 위 수치와 출력 줄은 원문 그대로입니다.</p>
+  </footer>
+
+</div>
+</main>
+
+<script>
+  // === Menu ===
+  function toggleMenu() {
+    var d = document.getElementById('vizMenuDropdown');
+    if (d) d.classList.toggle('open');
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.viz-menu')) {
+      var d = document.getElementById('vizMenuDropdown');
+      if (d) d.classList.remove('open');
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var d = document.getElementById('vizMenuDropdown');
+      if (d) d.classList.remove('open');
+    }
+  });
+
+  // === Theme ===
+  // 저장된 선택이 없으면 클래스를 붙이지 않는다 -> CSS prefers-color-scheme 가 그대로 동작.
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('viz-theme'); } catch (err) { savedTheme = null; }
+  function osPrefersDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function applyTheme(t) {
+    document.documentElement.className = 'theme-' + t;
+    var label = document.getElementById('themeLabel');
+    if (label) label.textContent = (t === 'dark' ? '라이트 테마로' : '다크 테마로');
+    try { localStorage.setItem('viz-theme', t); } catch (err) {}
+  }
+  function currentTheme() {
+    if (document.documentElement.classList.contains('theme-dark')) return 'dark';
+    if (document.documentElement.classList.contains('theme-light')) return 'light';
+    return osPrefersDark() ? 'dark' : 'light';
+  }
+  function cycleTheme() { applyTheme(currentTheme() === 'dark' ? 'light' : 'dark'); }
+  if (savedTheme === 'dark' || savedTheme === 'light') { applyTheme(savedTheme); }
+  else {
+    var lbl = document.getElementById('themeLabel');
+    if (lbl) lbl.textContent = (osPrefersDark() ? '라이트 테마로' : '다크 테마로');
+  }
+
+  // === Copy command ===
+  function copyCmd(btn) {
+    var code = btn.parentNode.querySelector('code');
+    if (!code) return;
+    var text = code.textContent;
+    var done = function () {
+      var prev = btn.textContent;
+      btn.textContent = '복사됨';
+      btn.classList.add('done');
+      setTimeout(function () { btn.textContent = prev; btn.classList.remove('done'); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (err) {}
+      document.body.removeChild(ta);
+    }
+  }
+
+  // === Scroll reveal ===
+  document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('reveal'); });
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('visible'); });
+  }
+
+  // === Counters ===
+  function animateCounters() {
+    document.querySelectorAll('[data-count]').forEach(function (el) {
+      if (el.dataset.counted) return;
+      el.dataset.counted = '1';
+      var target = parseFloat(el.dataset.count);
+      var start = performance.now(), duration = 900;
+      (function tick(now) {
+        var p = Math.min((now - start) / duration, 1), eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toString();
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+  var counterEl = document.querySelector('[data-count]');
+  if (counterEl && 'IntersectionObserver' in window) {
+    var cObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { animateCounters(); cObs.disconnect(); } });
+    }, { threshold: 0.3 });
+    cObs.observe(counterEl);
+  }
+</script>
+</body>
+</html>
