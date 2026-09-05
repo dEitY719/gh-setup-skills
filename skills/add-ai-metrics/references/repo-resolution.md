@@ -37,10 +37,20 @@ when the shared flow changes.
    step 3. Both come from that one URL — never from two sources:
 
    ```bash
-   . "${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
    REMOTE_URL=$(git remote get-url <remote-name>) || exit 1
-   TARGET_REPO=$(_gh_parse_owner_repo_url "$REMOTE_URL") || exit 1
-   TARGET_HOST=$(_gh_host_from_url "$REMOTE_URL") || TARGET_HOST=$(_gh_resolve_host)
+   _SSOT="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
+   if [ -r "$_SSOT" ]; then
+       . "$_SSOT"
+       TARGET_REPO=$(_gh_parse_owner_repo_url "$REMOTE_URL") || exit 1
+       TARGET_HOST=$(_gh_host_from_url "$REMOTE_URL") || TARGET_HOST=$(_gh_resolve_host)
+   else
+       # Standalone install — no dotfiles checkout. Strip scheme, credentials
+       # and the `.git` suffix, then split on the first `:` or `/`.
+       _u=${REMOTE_URL%.git}; _u=${_u#*://}; _u=${_u#*@}
+       TARGET_HOST=${_u%%[:/]*}
+       TARGET_REPO=${_u#*[:/]}
+   fi
+   [ -n "$TARGET_HOST" ] && [ -n "$TARGET_REPO" ] || exit 1
    export GH_HOST="$TARGET_HOST"
    export TARGET_REPO TARGET_HOST
    ```
@@ -49,9 +59,13 @@ when the shared flow changes.
    - `git@github.samsungds.net:<owner>/<repo>.git` → `github.samsungds.net`
      + `<owner>/<repo>`
 
-   `gh_host.sh` 가 host/URL 매핑의 SSOT 다 — 정규식이나 도메인 목록을 여기에
-   복제하지 않는다. `_gh_resolve_host` (setup-mode → host) 는 파싱할 remote
-   URL 이 없을 때만 쓰는 fallback 이다.
+   `gh_host.sh` 가 있으면 그것이 host/URL 매핑의 SSOT 다 — 정규식이나 도메인
+   목록을 여기에 복제하지 않는다. `_gh_resolve_host` (setup-mode → host) 는
+   파싱할 remote URL 이 없을 때만 쓰는 fallback 이다. `gh-setup` 을 dotfiles
+   없이 단독 설치한 환경에는 그 파일이 없으므로, 위의 `else` 분기가 같은 두
+   값을 remote URL 하나에서 직접 뽑는다 — 이 스킬은 Step 1 에서 `TARGET_REPO`
+   를 못 구하면 진행할 수 없기 때문에, 여기서 fallback 이 없으면 vendoring
+   자체가 무의미해진다.
 
 Store the results as `TARGET_REPO` and `TARGET_HOST` — every later step of this
 skill reads them.
