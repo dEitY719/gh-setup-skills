@@ -8,11 +8,11 @@ Detection and edit logic for the `<!-- ai-metrics -->` footer used by
 Three forms exist in the wild — all must be detected as "already tagged":
 
 - `<!-- ai-metrics -->` … `<!-- /ai-metrics -->`
-  (the original PR #320 / `gh-issue-create` shape)
+  (the original PR dEitY719/dotfiles#320 / `gh-issue-create` shape)
 - `<!-- ai-metrics:<skill-name> -->` … `<!-- /ai-metrics:<skill-name> -->`
-  (the `metrics-helper.md` scheme used by post-#320 retro-fit work)
+  (the `metrics-helper.md` scheme used by post-dEitY719/dotfiles#320 retro-fit work)
 - `<details>\n<summary>🤖 AI Metrics · …</summary>\n\n<!-- ai-metrics(:<skill>)? -->` … `<!-- /ai-metrics(:<skill>)? -->\n\n</details>`
-  (the new `<details>`-wrapped form introduced in issue #367 — default for new cards)
+  (the new `<details>`-wrapped form introduced in issue dEitY719/dotfiles#367 — default for new cards)
 
 A single regex covers all three:
 
@@ -23,7 +23,7 @@ A single regex covers all three:
 ## Bash detection
 
 A naive `grep '<!-- ai-metrics'` returns false positives on bodies that
-*mention* the marker in inline code spans (e.g. issue #324 itself, which
+*mention* the marker in inline code spans (e.g. issue dEitY719/dotfiles#324 itself, which
 documents the footer format and contains many bare `<!-- ai-metrics -->`
 references in backticks). The detector therefore requires the **anchored
 pair**: a `---` separator on its own line preceded by 1+ newlines,
@@ -33,11 +33,11 @@ the CLOSE marker on its own line.
 ```bash
 has_footer() {
   # Returns 0 (true) only when an OPEN+CLOSE block follows the `---`
-  # separator that gh:issue-create / PR #320 emit. Inline mentions
+  # separator that gh-issue:create / PR dEitY719/dotfiles#320 emit. Inline mentions
   # (`<!-- ai-metrics -->` in backticks) do not match. The leading
-  # `\n+` tolerates both PR #320's `\n---\n` (single) and the newer
+  # `\n+` tolerates both PR dEitY719/dotfiles#320's `\n---\n` (single) and the newer
   # `\n\n---\n` (double) append conventions.
-  # The optional `<details>…</summary>\n\n` allows the new #367 wrapped form.
+  # The optional `<details>…</summary>\n\n` allows the new dEitY719/dotfiles#367 wrapped form.
   printf '%s' "$1" | perl -0777 -ne '
     exit (
       /\n+---\n(?:<details>\n<summary>[^\n]*<\/summary>\n\n)?<!-- ai-metrics(?::[A-Za-z0-9_-]+)? -->\n.*?\n<!-- \/ai-metrics(?::[A-Za-z0-9_-]+)? -->/s
@@ -145,13 +145,13 @@ After the per-card loop completes, print exactly two lines:
 
 ```
 Summary: added=A  replaced=R  skipped=S  failed=F  (total T)
-[ai-metrics:gh-add-ai-metrics] ~{ELAPSED} min · {T} cards processed
+[ai-metrics:gh-setup-add-ai-metrics] ~{ELAPSED} min · {T} cards processed
 ```
 
 The second line is **context-only**: this skill does mutate GitHub
 artifacts, but its own runtime metric is informational and not written
 into any specific card's footer (the per-card metrics are what the
-loop just appended). Treat it like the `gh:issue-implement` context
+loop just appended). Treat it like the `gh-issue:implement` context
 line — emitted to stdout, not posted as a comment.
 
 ## Test rubric
@@ -168,9 +168,9 @@ A retro-fit run is correct iff:
    produces identical bodies (idempotent).
 4. `has_footer` returns false on a body that mentions the marker only
    in inline code spans (e.g. `\`<!-- ai-metrics -->\`` inside docs).
-   Issue #324 of this repo is the canonical positive example for this
+   Issue dEitY719/dotfiles#324 is the canonical positive example for this
    case after stripping.
 5. `has_footer` returns true for the new `<details>`-wrapped form
-   (issue #367) as well as for legacy bare `<!-- ai-metrics -->` blocks.
+   (issue dEitY719/dotfiles#367) as well as for legacy bare `<!-- ai-metrics -->` blocks.
 6. `replace_footer` called on a legacy bare-form footer emits the new
    `<details>`-wrapped form (in-place upgrade on `--force`).

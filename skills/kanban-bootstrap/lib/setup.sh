@@ -221,7 +221,7 @@ auth_scopes_csv() {
     local scopes host_args=()
 
     # Use --hostname when HOST is non-default so GHE tokens are checked
-    # against the actual instance (PR #702 review feedback).
+    # against the actual instance (PR dEitY719/dotfiles#702 review feedback).
     if [ -n "${HOST:-}" ] && [ "$HOST" != "github.com" ]; then
         host_args=(--hostname "$HOST")
     fi
@@ -275,7 +275,7 @@ require_project_scope() {
 }
 
 # Every GraphQL round-trip (reads AND the project/field mutations) goes
-# through here, so this is where the host pin has to live (#1407). `HOST`
+# through here, so this is where the host pin has to live (dEitY719/dotfiles#1407). `HOST`
 # is the origin-derived host: it defaults to github.com at declaration and
 # `detect_host` overwrites it in `main` before the first `gh_graphql` call,
 # so it is always in scope even under `set -u`. `--hostname` is `gh api`'s
@@ -506,7 +506,6 @@ pr_template_body() {
 <!--
 Closes #<N> 키워드가 반드시 포함되어야 Project 보드의 Done 자동 전환이
 동작합니다. 이슈를 완전히 해결하지 않는 PR은 Closes 대신 Refs 를 사용하세요.
-상세는 docs/.ssot/github-project-board.md 를 참고하세요.
 -->
 
 ## Summary
@@ -643,7 +642,7 @@ print_final_report() {
     ux_bullet_sub "Link: $(workflow_deep_link "auto-add")"
     ux_bullet "Item added to project: set Status to ${y}'Backlog'${r} so every new card starts in the intake column."
     ux_bullet_sub "Link: $(workflow_deep_link "item-added")"
-    ux_bullet "Pull request linked to issue: ${y}DISABLE this workflow${r} per SSOT decision #289. Issues do not visit 'In review' — the column is PR-only. Leaving this enabled wrongly moves Issue cards into review when a PR links them."
+    ux_bullet "Pull request linked to issue: ${y}DISABLE this workflow${r} per SSOT decision dEitY719/dotfiles#289. Issues do not visit 'In review' — the column is PR-only. Leaving this enabled wrongly moves Issue cards into review when a PR links them."
     ux_bullet_sub "Link: $(workflow_deep_link "pr-linked")"
     ux_bullet "Code review approved: set Status to ${y}'Approved'${r} so PR cards reflect the pre-merge state."
     ux_bullet_sub "Link: $(workflow_deep_link "review-approved")"
@@ -665,7 +664,7 @@ print_final_report() {
     # references/ui-checklist.md — keep both host-pinned and identical.
     # `--repo` names a repo but no host, so without the prefix this write
     # follows `gh repo set-default` to whichever server that points at
-    # (#1403/#1407). This runs after detect_host, so HOST is resolved.
+    # (dEitY719/dotfiles#1403/dEitY719/dotfiles#1407). This runs after detect_host, so HOST is resolved.
     ux_bullet "GH_HOST=\"${HOST}\" gh issue create --repo ${OWNER}/${REPO} --title \"[Test] kanban smoke\" --body \"ignore\""
 
     if $DRY_RUN; then
@@ -679,7 +678,7 @@ main() {
     require_command gh "Install GitHub CLI: https://cli.github.com/"
     require_command jq "Install jq to parse GitHub API responses."
     # detect_host MUST precede require_project_scope so GHE token scopes
-    # are validated against the correct host (PR #702 review feedback).
+    # are validated against the correct host (PR dEitY719/dotfiles#702 review feedback).
     detect_host
     require_project_scope
 

@@ -15,7 +15,7 @@ label bootstrap, and host-aware UI checklist.
 | Option | Description | Default |
 |---|---|---|
 | `--no-bootstrap-labels` | Skip the label registration step (target repo follows a different label policy) | labels bootstrapped |
-| `--force-label-sync` | Back-compat **no-op** (#1226): `gh-setup:label-bootstrap` now always force-syncs SSOT label colors/descriptions, so this flag has no effect. Accepted silently. | inert |
+| `--force-label-sync` | Back-compat **no-op** (dEitY719/dotfiles#1226): `gh-setup:label-bootstrap` now always force-syncs SSOT label colors/descriptions, so this flag has no effect. Accepted silently. | inert |
 | `--with-smoke-test` | Execute the smoke test commands instead of only printing them | print-only |
 | `-h`, `--help`, `help` | Print this help and stop. No API calls. | — |
 
@@ -51,7 +51,7 @@ label bootstrap, and host-aware UI checklist.
 4. Dry-runs `lib/setup.sh`. Aborts if dry-run fails.
 5. Real-runs `lib/setup.sh`. Captures Project URL and number.
 6. Prints the host-aware UI checklist with workflow #3 disable
-   guidance (per SSOT decision #289) and the smoke test commands.
+   guidance (per SSOT decision dEitY719/dotfiles#289) and the smoke test commands.
 
 ## Re-run safety
 
@@ -62,13 +62,13 @@ cleanly with rc=0 and the existing URL. The skill surfaces this as
 ## Single SSOT note
 
 The script `lib/setup.sh` (relocated from its former scripts/ location
-in issue #699) lives only inside this skill. Invoke it directly from
+in issue dEitY719/dotfiles#699) lives only inside this skill. Invoke it directly from
 non-Claude-Code contexts:
 `bash skills/kanban-bootstrap/lib/setup.sh [...]`.
 
 ## Related
 
-- SSOT: `docs/.ssot/github-project-board.md`
+- SSOT: `docs/.ssot/github-project-board.md` (a `dEitY719/dotfiles`-internal document — not shipped with this plugin)
 - Label SSOT: `../label-bootstrap/references/gh-labels.md` (delegated to `gh-setup:label-bootstrap`)
 - Playbook: `docs/guide/playbooks/kanban-board-setup.md`
-- Decision: #289 (3-stage issue lifecycle, workflow #3 disabled)
+- Decision: dEitY719/dotfiles#289 (3-stage issue lifecycle, workflow #3 disabled)

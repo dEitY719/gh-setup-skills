@@ -1,7 +1,7 @@
 # Post-hoc Metric Estimation
 
 When `gh-setup:add-ai-metrics` retrofits a card that was created before the
-auto-capture pipeline (#317 / #320) existed, the original Claude session
+auto-capture pipeline (dEitY719/dotfiles#317 / dEitY719/dotfiles#320) existed, the original Claude session
 is gone. The values written to the footer are therefore estimates derived
 from the card's static content. This document defines those rules so they
 stay deterministic across re-runs.
@@ -31,10 +31,10 @@ Regex notes:
 
 - `\n+---\n` matches one or more leading newlines + the `---` separator
   on its own line. Tolerates both append conventions in the wild —
-  PR #320's `\n---\n` (single) and `gh-issue-create`'s `\n\n---\n`
+  PR dEitY719/dotfiles#320's `\n---\n` (single) and `gh-issue-create`'s `\n\n---\n`
   (double) — without leaving a stray newline behind in either case.
 - `(?:<details>\n<summary>[^\n]*</summary>\n\n)?` optionally matches the
-  new `<details>` wrapper prefix introduced in issue #367.
+  new `<details>` wrapper prefix introduced in issue dEitY719/dotfiles#367.
 - `<!-- ai-metrics(?::[A-Za-z0-9_-]+)? -->` matches both the colonless
   form and the suffixed form (`<!-- ai-metrics:gh-pr -->`).
 - `.*?` non-greedy + the `s` flag scopes the match to the nearest
@@ -49,7 +49,7 @@ TOKENS = max(1000, round_to_500((len(title) + len(stripped)) / 4))
 
 - Character count (not byte count); `wc -m` for safety on multibyte
   Korean text.
-- Round to nearest 500 to match `gh-issue-create/references/metrics-baseline.md`
+- Round to nearest 500 to match `references/metrics-baseline.md`
   Token Estimation rules.
 - Floor at 1000 — anything smaller is noise.
 
@@ -71,19 +71,10 @@ prefix=$(printf '%s' "$title" | sed -nE 's/^([a-z]+)(\([^)]*\))?:.*/\1/p')
 prefix=${prefix:-misc}
 ```
 
-Mapping (mirrors `gh-issue-create/references/metrics-baseline.md` —
-do not duplicate the table; load that file at runtime):
-
-| prefix | human_h |
-|--------|---------|
-| `feat` (default size) | 8 |
-| `fix` | 2 |
-| `refactor` | 4 |
-| `perf` | 3 |
-| `docs` | 1 |
-| `test` | 2 |
-| `chore` | 0.5 |
-| `misc` (fallback) | 2 |
+Mapping — the SSOT is the "Human Time Lookup Table" in
+[`references/metrics-baseline.md`](metrics-baseline.md). Do not duplicate it
+here; load that file and read the row for `prefix`, falling back to `misc`
+(2 h) when the prefix is absent or unlisted.
 
 For `feat`, sizing requires conversation context that is unavailable
 post-hoc. Default to **medium** (8 h) unconditionally. Users who want a
@@ -102,7 +93,7 @@ Equivalently, in minutes:
 elapsed_min=$(awk -v h="$human_h" 'BEGIN { v = h * 60 * 0.05; printf "%d", (v < 1 ? 1 : v + 0.5) }')
 ```
 
-The 5% factor reflects the observed ratio in #320's own footer
+The 5% factor reflects the observed ratio in dEitY719/dotfiles#320's own footer
 (`👤 ~8 h · 🤖 ~15 min` ≈ 3.1%, rounded up for safety) and is intentionally
 conservative — better to over-report AI cost than under-report.
 
@@ -116,7 +107,7 @@ content produces the same numbers, so the resulting body diff is empty.
 ## Why not call the Claude API directly?
 
 The skill description explicitly excludes live API queries (Non-Goal
-in issue #324). Reasons:
+in issue dEitY719/dotfiles#324). Reasons:
 
 1. The original conversation is unrecoverable — no API can answer
    "how many tokens did Claude use to draft this card on date X."

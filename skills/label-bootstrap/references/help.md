@@ -33,7 +33,7 @@ single SSOT script at `lib/label-bootstrap.sh`.
 3. **SSOT 10 + pipeline apply**: each of `feat`, `fix`, `docs`, `refactor`,
    `test`, `ci`, `chore`, `skill`, `TODO`, `reference` is PATCHed (color +
    description synced) if it exists, or POSTed if it does not. The two
-   pipeline-state labels `review-blocked` / `review-passed` (#1564) join the
+   pipeline-state labels `review-blocked` / `review-passed` (dEitY719/dotfiles#1564) join the
    same loop, with their `pipeline|` prefix stripped.
 4. **Prune** (only with `--prune`): labels outside
    (SSOT 10) ∪ (pipeline 2) ∪ (alias targets `fix`/`docs`/`chore`) ∪
@@ -47,7 +47,7 @@ single SSOT script at `lib/label-bootstrap.sh`.
 label unless `--force-label-sync` was passed. **This skill always
 force-syncs** existing SSOT labels' color and description — there is no
 "skip unless forced" mode. If you do not want colors changed, do not run
-this skill. This is an intentional, documented change (F-3 of issue #1226).
+this skill. This is an intentional, documented change (F-3 of issue dEitY719/dotfiles#1226).
 
 ## Safety
 
@@ -64,7 +64,7 @@ this skill. This is an intentional, documented change (F-3 of issue #1226).
 ## Related
 
 - SSOT: `references/gh-labels.md` (labels, aliases, allowlist, prune rule)
-- Consumers: `.gh-issue-defaults.yml`, `gh:issue-implement`
-  (`GH_ISSUE_BLOCK_LABELS` includes `reference`), `gh:pr` (commit-type map)
+- Consumers: `.gh-issue-defaults.yml`, `gh-issue:implement`
+  (`GH_ISSUE_BLOCK_LABELS` includes `reference`), `gh-pr:create` (commit-type map)
 - Sibling: `gh-setup:kanban-bootstrap` (delegates its label step to this skill)
-- Design: issue #1226
+- Design: issue dEitY719/dotfiles#1226

@@ -134,12 +134,12 @@ This repo owns none — deliberately.
   (`{codex,kimi,gemini,antigravity,hermes,opencode}-tools.md`). That repo is
   their sole owner; the other fourteen `*-skills` repos link there rather than
   carrying copies, so one tool rename is one edit, not fifteen
-  (dotfiles #1410 F-5 / NF-2). The only condensed mirror here is
+  (dEitY719/dotfiles#1410 F-5 / NF-2). The only condensed mirror here is
   `.kimi-plugin/plugin.json`'s `skillInstructions`, because Kimi CLI cannot read
   a reference file at load time — it points back to the canonical file.
 - **The reusable CI workflow** is
   [`harness-skills/.github/workflows/skill-check.yml`](https://github.com/dEitY719/harness-skills/blob/main/.github/workflows/skill-check.yml)
-  (#1410 D-10). See [CI](#ci).
+  (dEitY719/dotfiles#1410 D-10). See [CI](#ci).
 
 ## Layout
 
@@ -170,7 +170,7 @@ the full rationale and contribution rules.
 
 Skill directory names dropped their old `gh-` / `devx-` prefixes in the
 migration: `/gh-setup:gh-label-bootstrap` stutters, and the plugin namespace
-already carries the meaning the prefix used to (#1410 F-4). Unlike the
+already carries the meaning the prefix used to (dEitY719/dotfiles#1410 F-4). Unlike the
 `obsidian-` / `karakeep-` prefixes that `pkm-skills` kept, these named one
 service, not two.
 
@@ -200,7 +200,7 @@ applies here on the next run.
 
 The one `allow-emoji-paths` exemption is `add-ai-metrics`: that skill exists to
 write the ai-metrics footer, whose design intentionally uses the chart / person
-/ robot glyphs (dotfiles #317 F-2, PR #320), and its references quote the footer
+/ robot glyphs (dEitY719/dotfiles#317 F-2, PR dEitY719/dotfiles#320), and its references quote the footer
 verbatim. Stripping them would break the format the skill is defined by. Nothing
 else in the repo may carry an emoji.
 
@@ -210,13 +210,14 @@ These skills were extracted from
 [`dEitY719/dotfiles`](https://github.com/dEitY719/dotfiles)
 (`claude/skills/{gh-label-bootstrap,gh-kanban-bootstrap,gh-add-ai-metrics,devx-docs-bootstrap}`)
 as a content snapshot at source commit
-`b5f7fd1347e56c9a70e9b67ba15e7c5b7f1cf9ac` — no history rewriting. The dotfiles
-copies remain in place; they are removed in Phase 4 of that repo's migration
-(#1410 NF-1 / NF-3). Behaviour is unchanged from the snapshot; only the
+`b5f7fd1347e56c9a70e9b67ba15e7c5b7f1cf9ac` — no history rewriting. That
+`claude/skills/` path is a historical citation only: the dotfiles copies were
+deleted in Phase 4-1 of that repo's migration (commit `ad0d33d5`,
+dEitY719/dotfiles#1410 NF-1 / NF-3). Behaviour is unchanged from the snapshot; only the
 namespace moved, from `gh:` / `devx:` to `gh-setup:`, and the directory names
 lost their now-redundant prefixes.
 
-This is Phase 2 of the dotfiles #1410 migration. `packaging-skills` was Phase 0,
+This is Phase 2 of the dEitY719/dotfiles#1410 migration. `packaging-skills` was Phase 0,
 and `harness-skills` was Phase 1 and is the sibling that owns the shared assets
 this repo links to.
 

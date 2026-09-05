@@ -13,15 +13,15 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
 
 - 대상: 이 저장소 및 다른 프로젝트(재사용형) — origin/upstream 양쪽.
 - 소비자: `gh-setup:label-bootstrap` (동기화 실행), `gh-setup:kanban-bootstrap`
-  (보드 셋업 중 라벨 부트스트랩 위임), `gh:issue-create`
-  (`.gh-issue-defaults.yml` 매핑), `gh:issue-implement`
-  (`reference` 라벨 차단), `gh:pr` (커밋타입 → 라벨 매핑).
-- 범위 밖: `CI fail`(`gh:pr-resolve-ci-fail`), `conflict`
-  (`gh:pr-resolve-conflict`) 등 별개 라벨 체계는 건드리지 않는다.
+  (보드 셋업 중 라벨 부트스트랩 위임), `gh-issue:create`
+  (`.gh-issue-defaults.yml` 매핑), `gh-issue:implement`
+  (`reference` 라벨 차단), `gh-pr:create` (커밋타입 → 라벨 매핑).
+- 범위 밖: `CI fail`(`gh-resolve:ci-fail`), `conflict`
+  (`gh-resolve:conflict`) 등 별개 라벨 체계는 건드리지 않는다.
 - 예외: **파이프라인 상태 라벨**은 10-label SSOT 에 편입하지 않되, 이 문서의
   별도 `pipeline|` feed 로 **프로비저닝만** 한다 (아래 "파이프라인 라벨" 절).
 
-차용 근거 / 설계 논의: issue #1226.
+차용 근거 / 설계 논의: issue dEitY719/dotfiles#1226.
 
 ## 확정 10개 라벨
 
@@ -34,21 +34,21 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
 | `test` | `2da44e` | 테스트 갭/추가/변경 (TDD red-green-blue의 green) |
 | `ci` | `1d76db` | CI / GitHub Actions |
 | `chore` | `bfbfbf` | 빌드·도구·deps·스타일 (구 `build` 대체) |
-| `skill` | `d97757` | `claude/skills/**` 변경 (Claude 브랜드 컬러) |
+| `skill` | `d97757` | 스킬/플러그인 변경 (Claude 브랜드 컬러) |
 | `TODO` | `d33cb5` | 처리 대기 항목 |
-| `reference` | `0e8a8a` | 구현 불필요/참고용 — `gh:issue-implement`가 구현을 시작하지 않는 트리거 |
+| `reference` | `0e8a8a` | 구현 불필요/참고용 — `gh-issue:implement`가 구현을 시작하지 않는 트리거 |
 
 색상은 `#` 없이 6자리 hex 로 적는다 — GitHub label API (`POST`/`PATCH
 /repos/{repo}/labels`) 가 `#` 없는 형식을 받고, 아래 plain feed 도 같은
 형식을 쓴다.
 
-## 파이프라인 라벨 (별도 feed, #1564)
+## 파이프라인 라벨 (별도 feed, dEitY719/dotfiles#1564)
 
 `review-blocked` / `review-passed` 는 **이슈 분류가 아니라 파이프라인 상태**다.
-`devx:pr-review-all` 이 리뷰어 판정을 집계해 붙이고, `gh:pr-merge-train` 이
+`gh-verify:review-all` 이 리뷰어 판정을 집계해 붙이고, `gh-pr:merge-train` 이
 머지 하드 게이트로 읽는다 (SSOT:
-`claude/skills/devx-pr-review-all/references/review-verdict-label.md`,
-`claude/skills/gh-pr-merge-train/references/review-verdict-gate.md`).
+`gh-verify:review-all` 의 `references/review-verdict-label.md`,
+`gh-pr:merge-train` 의 `references/review-verdict-gate.md`).
 
 | name | color | description |
 |---|---|---|
@@ -56,9 +56,9 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
 | `review-passed` | `0e8a16` | every reviewer lane that ran returned a non-blocking verdict, and at least one lane ran |
 
 10개 SSOT 에 넣지 **않는** 이유: 이슈 분류 축이 아니고 alias 도 없으며,
-`gh:issue-create` 자동 라벨링·`gh:pr` 커밋타입 매핑 어느 소비자도 이 두 개를
+`gh-issue:create` 자동 라벨링·`gh-pr:create` 커밋타입 매핑 어느 소비자도 이 두 개를
 쓰지 않는다. 그런데도 이 문서가 프로비저닝을 맡는 이유는 `_gh_pr_edit_safe_label`
-이 **없는 라벨을 자동 생성하지 않기** 때문이다 (rc 3, #326) — 프로비저닝 경로가
+이 **없는 라벨을 자동 생성하지 않기** 때문이다 (rc 3, dEitY719/dotfiles#326) — 프로비저닝 경로가
 없으면 판정 라벨이 영영 안 붙고, 부재를 차단으로 보는 게이트가 모든 PR 을
 영구 skip 시킨다.
 
@@ -102,8 +102,8 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
   (SSOT 10개) ∪ (**파이프라인 feed 2개**) ∪ (alias 신규 이름
   `fix`/`docs`/`chore`) ∪ (prune allowlist 7종).
 - 파이프라인 라벨은 `--prune` 에서 **항상 보존**된다. 여기서 지워지면
-  `devx:pr-review-all` 이 판정을 못 붙이고 (rc 3), 머지 트레인이 모든 PR 을
-  "미검증"으로 읽어 파이프라인이 통째로 멈춘다 (#1564).
+  `gh-verify:review-all` 이 판정을 못 붙이고 (rc 3), 머지 트레인이 모든 PR 을
+  "미검증"으로 읽어 파이프라인이 통째로 멈춘다 (dEitY719/dotfiles#1564).
 - 판정은 **alias rename 을 먼저 적용한 뒤의 최종 label 셋 기준**으로
   한다. 그래야 `bug` 같은 rename 대상이 (이미 `fix` 가 된 상태라)
   삭제 후보로 오판되지 않는다.
@@ -135,9 +135,9 @@ refactor|8250df|동작 보존하며 구조 정리
 test|2da44e|테스트 갭/추가/변경 (TDD red-green-blue의 green)
 ci|1d76db|CI / GitHub Actions
 chore|bfbfbf|빌드·도구·deps·스타일 (구 build 대체)
-skill|d97757|claude/skills/** 변경 (Claude 브랜드 컬러)
+skill|d97757|스킬/플러그인 변경 (Claude 브랜드 컬러)
 TODO|d33cb5|처리 대기 항목
-reference|0e8a8a|구현 불필요/참고용 — gh:issue-implement가 구현을 시작하지 않는 트리거
+reference|0e8a8a|구현 불필요/참고용 — gh-issue:implement가 구현을 시작하지 않는 트리거
 ```
 
 ### Alias 매핑 (`old|new`)
@@ -158,12 +158,12 @@ pipeline|review-passed|0e8a16|every reviewer lane that ran returned a non-blocki
 ## Related
 
 - 스킬: `skills/label-bootstrap/SKILL.md`
-- 보드 SSOT: `docs/.ssot/github-project-board.md`
+- 보드 SSOT: `docs/.ssot/github-project-board.md` (dEitY719/dotfiles 내부 문서 — 이 repo 밖)
 - 소비 설정: `.gh-issue-defaults.yml`
-- 소비 스킬: `claude/skills/gh-issue-implement/references/claim.md`
+- 소비 스킬: `gh-issue:implement` 의 `references/claim.md`
   (`GH_ISSUE_BLOCK_LABELS` 에 `reference` 포함),
-  `claude/skills/gh-pr/references/pr-body-template.md` (커밋타입 매핑)
-- 파이프라인 feed 소비: `claude/skills/devx-pr-review-all/references/review-verdict-label.md`
-  (생산자), `claude/skills/gh-pr-merge-train/references/review-verdict-gate.md`
+  `gh-pr:create` 의 `references/pr-body-template.md` (커밋타입 매핑)
+- 파이프라인 feed 소비: `gh-verify:review-all` 의 `references/review-verdict-label.md`
+  (생산자), `gh-pr:merge-train` 의 `references/review-verdict-gate.md`
   (소비자)
-- 설계 논의: issue #1226 · 파이프라인 feed: issue #1564 (상위 #1527)
+- 설계 논의: issue dEitY719/dotfiles#1226 · 파이프라인 feed: issue dEitY719/dotfiles#1564 (상위 dEitY719/dotfiles#1527)

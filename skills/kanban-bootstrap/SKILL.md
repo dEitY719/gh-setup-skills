@@ -6,6 +6,9 @@ description: >-
   "프로젝트 보드 자동화 셋업", "set up the kanban board". Board setup — pure
   label sync is gh-setup:label-bootstrap.
 allowed-tools: Bash, Read, Grep
+license: MIT
+compatibility:
+  network: required
 metadata:
   model_recommendation:
     tier: haiku
@@ -36,7 +39,7 @@ URL. On any miss the helper prints the install or `gh auth refresh -h <host> -s 
 Always `origin` (never prompt for remote selection). Detect `OWNER/REPO` via
 `GH_HOST="$HOST" gh repo view --json nameWithOwner`; explicit `--owner`/`--repo` override. `$HOST` is Step 2's
 `_kanban_host` value — every `gh` call carries it (`GH_HOST="$HOST"`, or `--hostname "$HOST"` for `gh api`),
-since `--repo` alone names no server (#1403 / #1407).
+since `--repo` alone names no server (dEitY719/dotfiles#1403 / dEitY719/dotfiles#1407).
 
 ## Step 4: Options
 
@@ -44,7 +47,7 @@ If `--hide-columns` was not passed and this looks like a personal repo,
 ask the user once (1-line question) — never auto-infer from collaborator
 count (NF-3 / privacy). Parse `--no-bootstrap-labels` (skip Step 5).
 `--force-label-sync` is a back-compat **no-op**, accepted silently (F-3 of
-issue #1226 — flags and their defaults: `references/help.md`).
+issue dEitY719/dotfiles#1226 — flags and their defaults: `references/help.md`).
 
 ## Step 5: Label Bootstrap
 
@@ -67,8 +70,7 @@ permission errors warn on stderr and continue (never blocks board setup).
 bash "${SKILL_DIR}/lib/setup.sh" --dry-run <user-flags>
 ```
 
-On non-zero exit → abort (do not proceed to Step 7). Quote the script's
-stderr first line.
+On non-zero exit → abort (do not proceed to Step 7). Quote the script's stderr first line.
 
 ## Step 7: Real Run
 
@@ -76,13 +78,12 @@ stderr first line.
 bash "${SKILL_DIR}/lib/setup.sh" <user-flags>
 ```
 
-Parse stdout for `Project board setup finished` (success) or
-`A project titled '<TITLE>' already exists` (idempotent re-run). Extract
-the Project URL and number.
+Parse stdout for `Project board setup finished` (success) or `A project titled '<TITLE>' already exists`
+(idempotent re-run). Extract the Project URL and number.
 
 ## Step 8: UI Checklist + Report
 
-The script's `print_final_report` already emits host-aware URLs (post-#699 fix) and the workflow #3 `DISABLE`
+The script's `print_final_report` already emits host-aware URLs (post-dEitY719/dotfiles#699 fix) and the workflow #3 `DISABLE`
 instruction — pass it through, then append the smoke-test block and compact closing report per
 `references/report-template.md`.
 
@@ -92,7 +93,7 @@ instruction — pass it through, then append the smoke-test block and compact cl
 - Never auto-execute smoke test without explicit `--with-smoke-test`.
 - Never echo token / collaborator / project ID to stdout (NF-3).
 - Never silently fall back to a different remote — `origin` only.
-- `lib/setup.sh` is the sole entry point — do not reintroduce the old `scripts/` location (removed in #699).
+- `lib/setup.sh` is the sole entry point — do not reintroduce the old `scripts/` location (removed in dEitY719/dotfiles#699).
 
 ## Related Skills
 

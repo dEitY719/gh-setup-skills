@@ -24,10 +24,12 @@ something the user can undo from the CLI.
 The skills were extracted from `dEitY719/dotfiles`
 (`claude/skills/{gh-label-bootstrap,gh-kanban-bootstrap,gh-add-ai-metrics,devx-docs-bootstrap}`)
 as a content snapshot at source commit
-`b5f7fd1347e56c9a70e9b67ba15e7c5b7f1cf9ac` — no history rewriting. The dotfiles
-copies remain in place; they are removed in Phase 4 of that repo's migration
-plan (#1410 NF-1 / NF-3). This is Phase 2 of dotfiles #1410; `packaging-skills`
-was Phase 0 and `harness-skills` was Phase 1 and owns the shared assets.
+`b5f7fd1347e56c9a70e9b67ba15e7c5b7f1cf9ac` — no history rewriting. That
+`claude/skills/` tree is a historical citation only: the dotfiles copies were
+deleted in Phase 4-1 of that repo's migration plan (commit `ad0d33d5`,
+dEitY719/dotfiles#1410 NF-1 / NF-3), so those paths no longer resolve. This is
+Phase 2 of dEitY719/dotfiles#1410; `packaging-skills` was Phase 0 and
+`harness-skills` was Phase 1 and owns the shared assets.
 
 ## Layout: root manifests, one flat `skills/`
 
@@ -55,7 +57,7 @@ manifests under a `plugins/` directory.**
 
 This repo owns none. Both belong to `dEitY719/harness-skills`:
 
-**1. Per-harness tool mappings** (`references/*-tools.md` there, dotfiles #1410
+**1. Per-harness tool mappings** (`references/*-tools.md` there, dEitY719/dotfiles#1410
 F-5). Do not create a `references/` directory at this repo's root. If a doc here
 needs a mapping, link to
 `https://github.com/dEitY719/harness-skills/blob/main/references/<harness>-tools.md`.
@@ -79,25 +81,31 @@ point.
   invocation time.
 - **The old `gh-` / `devx-` prefixes are gone and stay gone.** They stuttered
   against the namespace (`/gh-setup:gh-label-bootstrap`), so the migration
-  dropped them (#1410 F-4). Do not reintroduce them, and do not shorten the
+  dropped them (dEitY719/dotfiles#1410 F-4). Do not reintroduce them, and do not shorten the
   remaining names further — `label-bootstrap`, not `labels`.
 - **Invocation form in prose is namespaced.** Body text referring to a skill as
   a command writes `/gh-setup:label-bootstrap`. The old dash-form aliases
   (`/gh-label-bootstrap`, `/devx-docs-bootstrap`) were dropped in the migration
   — do not reintroduce them.
-- **Cross-repo references keep their own namespace.** `gh:issue-create`,
-  `gh:pr`, `gh:issue-implement`, `gh:pr-merge-train`, and `devx:pr-review-all`
-  live in other repos of this family. Leave them exactly as written; only the
-  four siblings inside `skills/` take the `gh-setup:` prefix. The same goes for
+- **Cross-repo references use the sibling repo's post-split namespace.** The
+  `gh:` / `devx:` forms this repo used to cite are dead — those repos have since
+  split, so `gh:issue-create` → `gh-issue:create`, `gh:issue-implement` →
+  `gh-issue:implement`, `gh:pr` → `gh-pr:create`, `gh:pr-merge-train` →
+  `gh-pr:merge-train`, `gh:pr-resolve-conflict` → `gh-resolve:conflict`,
+  `gh:pr-resolve-ci-fail` → `gh-resolve:ci-fail`, `devx:pr-review-all` →
+  `gh-verify:review-all`. Verify a name against that repo's
+  `.claude-plugin/plugin.json` + `skills/<dir>/` before citing it; only the four
+  siblings inside `skills/` take the `gh-setup:` prefix. The one exception is
   the `<!-- ai-metrics:gh-pr -->` / `<!-- ai-metrics:gh-add-ai-metrics -->`
-  footer markers — those are an interop wire format shared with the `gh:` skills
+  footer markers — those are an interop wire format shared with the skills
   that write cards in the first place, not invocation forms, and renaming one
   would break detection of every card already in the wild.
-- **Progressive disclosure.** `SKILL.md` stays under 100 lines (CI enforces it)
-  and names which `references/` file to read and when. Detail lives in
-  `references/`; executable steps live in `lib/`. Do not inline either back into
-  `SKILL.md` — `kanban-bootstrap` is one line under the limit and
-  `add-ai-metrics` two.
+- **Progressive disclosure.** `SKILL.md` stays at or under 100 lines (CI
+  enforces it — it fails on 101, not on 100) and names which `references/` file
+  to read and when. Detail lives in `references/`; executable steps live in
+  `lib/`. Do not inline either back into `SKILL.md` — `kanban-bootstrap` sits
+  exactly on the limit and `add-ai-metrics` one line under, so any addition to
+  those two needs a matching cut.
 - **Description budget.** CI sums every skill description and fails past 5,440
   characters — Codex's context budget. The current total is 881. Keep new
   descriptions tight anyway.
@@ -126,7 +134,7 @@ These are acceptance criteria carried over from dotfiles, not advice:
   from the collaborator count — that inference is the privacy leak the rule
   exists to prevent. Never run the smoke test without an explicit
   `--with-smoke-test`. Every `gh` call carries `GH_HOST`, because `--repo` alone
-  names no server (#1403 / #1407).
+  names no server (dEitY719/dotfiles#1403 / dEitY719/dotfiles#1407).
 - **`docs-bootstrap` defaults to `--dry-run`** and writes only on `--apply`. It
   scaffolds; it never migrates a populated `docs/`, never authors document
   bodies beyond `docs/README.md`, and never overwrites that README without
@@ -158,14 +166,14 @@ The version appears in seven manifests: `.claude-plugin/marketplace.json`,
 `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
 `.kimi-plugin/plugin.json`, `.hermes-plugin/plugin.yaml`,
 `gemini-extension.json`, and `package.json`. CI checks that they agree — bump
-all of them together. Versioning is independent per repo (#1410 D-9); this repo
+all of them together. Versioning is independent per repo (dEitY719/dotfiles#1410 D-9); this repo
 does not move in lockstep with its siblings.
 
 ## No emojis
 
 Anywhere in this repo, with exactly one exemption: `skills/add-ai-metrics/`.
 That skill exists to write the ai-metrics footer, whose design intentionally
-uses the chart / person / robot glyphs (dotfiles #317 F-2, PR #320), and its
+uses the chart / person / robot glyphs (dEitY719/dotfiles#317 F-2, PR dEitY719/dotfiles#320), and its
 references quote the footer verbatim. `validate.yml` declares that subtree via
 `allow-emoji-paths`; do not widen the exemption, and do not strip the glyphs
 from the footer format to avoid it.

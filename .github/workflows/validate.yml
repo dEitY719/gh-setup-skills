@@ -1,7 +1,7 @@
 name: validate
 
 # This repo owns no CI logic of its own. It calls the reusable workflow owned by
-# `dEitY719/harness-skills` (dotfiles #1410 D-10), so a new check lands here the
+# `dEitY719/harness-skills` (dEitY719/dotfiles#1410 D-10), so a new check lands here the
 # moment it lands there — no copy to keep in sync.
 
 on:
@@ -19,7 +19,7 @@ jobs:
     with:
       plugin-name: gh-setup
       # `add-ai-metrics` exists to write the ai-metrics footer, whose design
-      # deliberately uses the chart / person / robot glyphs (dotfiles #317 F-2,
-      # PR #320). Its references quote that footer verbatim, so this one subtree
+      # deliberately uses the chart / person / robot glyphs (dEitY719/dotfiles#317 F-2,
+      # PR dEitY719/dotfiles#320). Its references quote that footer verbatim, so this one subtree
       # is exempt. Everywhere else the repo-wide emoji ban still applies.
       allow-emoji-paths: skills/add-ai-metrics/

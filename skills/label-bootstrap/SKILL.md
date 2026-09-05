@@ -6,6 +6,9 @@ description: >-
   "sync repo labels". Labels only — the Projects v2 board is
   gh-setup:kanban-bootstrap.
 allowed-tools: Bash, Read, Grep
+license: MIT
+compatibility:
+  network: required
 metadata:
   model_recommendation:
     tier: haiku
@@ -58,19 +61,19 @@ continue — a single label's failure never aborts the run.
 - **Force-sync, no skip mode**: every existing SSOT label is PATCHed to
   the canonical color/description unconditionally. This is an intentional
   change from the old `gh-setup:kanban-bootstrap` inline logic (which skipped
-  existing labels unless `--force-label-sync`); see F-3 of issue #1226.
+  existing labels unless `--force-label-sync`); see F-3 of issue dEitY719/dotfiles#1226.
 - **3 alias renames preserve links**: `bug`->`fix`,
   `documentation`->`docs`, `build`->`chore` are renamed via
   `PATCH new_name=`, never delete+recreate, so issues/PRs keep the label.
 - **`--prune` is opt-in**: without it, no label is ever deleted. With it,
   only labels outside (SSOT ∪ pipeline ∪ alias-targets ∪ allowlist) are
-  deleted, computed AFTER renames (NF-1 in #1226).
-- **2 pipeline-state labels** (`review-blocked` / `review-passed`, #1564)
+  deleted, computed AFTER renames (NF-1 in dEitY719/dotfiles#1226).
+- **2 pipeline-state labels** (`review-blocked` / `review-passed`, dEitY719/dotfiles#1564)
   come from a separate `pipeline|name|color|description` feed in the same
   SSOT file. They are provisioned like the base 10 and preserved by
   `--prune`, but stay out of the 10-label set: they are pipeline state, not
   issue classification, and have no aliases. Without them
-  `devx:pr-review-all` cannot issue a verdict and `gh:pr-merge-train` skips
+  `gh-verify:review-all` cannot issue a verdict and `gh-pr:merge-train` skips
   every PR.
 
 ## Constraints

@@ -110,7 +110,7 @@ parse_args() {
         *)
             # Reject empty / duplicate target paths — an empty TARGET would
             # resolve docs_root() to "/docs" (system root) and risk writing
-            # there (gemini PR #1030 review).
+            # there (gemini PR dEitY719/dotfiles#1030 review).
             if $saw_target; then
                 die "Multiple target paths given: '$TARGET' and '$1' (only one allowed)"
             fi
