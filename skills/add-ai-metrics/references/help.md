@@ -105,7 +105,7 @@ this help under the progressive-disclosure threshold. Quick taste:
 - **`--dry-run` is not zero-quota.** `gh view` is still called per card
   (state classification needs the body). It's `gh edit` that is skipped.
 
-## Footer format (matches PR #320 / `gh-issue-create`)
+## Footer format (matches PR dEitY719/dotfiles#320 / `gh-issue-create`)
 
 ```
 ---
@@ -126,7 +126,7 @@ estimated. Detail in `post-hoc-metrics.md`; summary:
 | Metric | Estimation rule |
 |--------|-----------------|
 | `TOKENS` | `(title + body chars) ÷ 4`, rounded to nearest 500, min 1000 |
-| `HUMAN_H` | conventional-commit prefix in title → `gh-issue-create/references/metrics-baseline.md`; fallback `misc` (2 h) |
+| `HUMAN_H` | conventional-commit prefix in title → `references/metrics-baseline.md`; fallback `misc` (2 h) |
 | `ELAPSED` | `max(1, HUMAN_H × 0.05)` — assumes AI took ~5% of the human estimate |
 
 These values are deterministic given the same body, so re-running the

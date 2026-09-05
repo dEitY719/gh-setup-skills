@@ -13,7 +13,7 @@ set -euo pipefail
 #   1. Alias renames first  — PATCH old -> new_name (preserves issue/PR links).
 #   2. SSOT 10 + pipeline    — PATCH if exists (force color/description sync),
 #      apply                   POST if missing. The `pipeline|`-prefixed feed
-#                              (#1564) joins this loop with its prefix stripped.
+#                              (dEitY719/dotfiles#1564) joins this loop with its prefix stripped.
 #   3. Prune (only --prune)  — DELETE labels outside SSOT ∪ pipeline ∪
 #                              alias-targets ∪ allowlist, computed AFTER
 #                              renames.
@@ -145,9 +145,9 @@ main() {
     # --- Parse SSOT plain feeds -------------------------------------------
     # 10-label feed:  name|<6hex>|description
     # alias feed:     old|new     (two lowercase words)
-    # pipeline feed:  pipeline|name|<6hex>|description        (#1564)
+    # pipeline feed:  pipeline|name|<6hex>|description        (dEitY719/dotfiles#1564)
     # tr -d '\r' + leading-whitespace tolerance guard against CRLF checkouts
-    # and incidental fence indentation (gemini-code-assist review, PR #1229).
+    # and incidental fence indentation (gemini-code-assist review, PR dEitY719/dotfiles#1229).
     #
     # The three regexes are mutually exclusive by construction: a pipeline row
     # cannot match the 10-label pattern (what follows its first `|` is a label
@@ -165,9 +165,9 @@ main() {
     # not an issue-classification axis and have no aliases. The prefix is
     # stripped here so they join the ordinary POST/PATCH loop below, and
     # because they land in `feed` they are also in the `--prune` keep set.
-    # Deleting them would leave `devx:pr-review-all` unable to issue a verdict
-    # (`_gh_pr_edit_safe_label` rc 3, #326) and the merge train reading every
-    # PR as unverified — the whole pipeline stops (#1564).
+    # Deleting them would leave `gh-verify:review-all` unable to issue a verdict
+    # (`_gh_pr_edit_safe_label` rc 3, dEitY719/dotfiles#326) and the merge train reading every
+    # PR as unverified — the whole pipeline stops (dEitY719/dotfiles#1564).
     pipeline_feed="$(printf '%s\n' "$ssot_content" \
         | grep -E '^[[:space:]]*pipeline\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|' \
         | sed -e 's/^[[:space:]]*//' -e 's/^pipeline|//' || true)"
@@ -205,7 +205,7 @@ main() {
             # Only bookkeep the rename as done when the API call actually
             # succeeded — otherwise step 2 below must still sync '$new'
             # directly instead of silently skipping it (codex review, PR
-            # #1229: a failed rename must not mask an out-of-sync label).
+            # dEitY719/dotfiles#1229: a failed rename must not mask an out-of-sync label).
             if api_mutate "rename label '${old}' -> '${new}' (sync color/desc)" \
                 "repos/${REPO}/labels/${old}" -X PATCH \
                 -f "new_name=${new}" -f "color=${color}" -f "description=${desc}"; then

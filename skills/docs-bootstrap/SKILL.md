@@ -6,6 +6,7 @@ description: >-
   스캐폴딩", "scaffold docs structure". Creates empty folders only — never
   migrates a populated docs/.
 allowed-tools: Bash, Read
+license: MIT
 metadata:
   model_recommendation:
     tier: haiku

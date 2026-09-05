@@ -1,6 +1,6 @@
 # Host-aware URL Rewrite — F-6
 
-The script `lib/setup.sh` is now host-aware (post-#699) — it derives
+The script `lib/setup.sh` is now host-aware (post-dEitY719/dotfiles#699) — it derives
 all output URLs from `$HOST` set by `detect_host()`. This file
 documents the same helpers in skill-callable form for cases where
 the skill needs to rewrite URLs emitted by external tools (or older

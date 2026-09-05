@@ -6,6 +6,7 @@ description: >-
   "기존 이슈/PR 에 메트릭 소급 부착", "backfill ai-metrics". Backfill only —
   new cards get the footer automatically.
 allowed-tools: Bash, Read, Grep
+license: MIT
 metadata:
   model_recommendation:
     tier: haiku
@@ -17,7 +18,7 @@ metadata:
 # gh-setup:add-ai-metrics — Retrofit ai-metrics footer onto past Issues/PRs
 
 Backfills the `tokens · human-h · ai-min` footer onto cards created before
-issue #317 / PR #320 made capture automatic. Idempotent — a card already
+issue dEitY719/dotfiles#317 / PR dEitY719/dotfiles#320 made capture automatic. Idempotent — a card already
 carrying an `<!-- ai-metrics -->` block is skipped, and bytes outside that
 block are never modified. Full flag / call-pattern table: `references/help.md`.
 
@@ -40,8 +41,8 @@ per `parse_date_arg` in `references/date-parsing.md` (SSOT).
 `parse_duration` in `references/pace-control.md`; `--limit` a positive
 integer; `--dry-run` a boolean.
 
-Resolve `TARGET_REPO` via the shared flow in the `gh:issue-create` skill's
-`references/repo-resolution.md` (another repo). Missing remote → list
+Resolve `TARGET_REPO` + `TARGET_HOST` per
+[`references/repo-resolution.md`](references/repo-resolution.md). Missing remote → list
 `git remote -v` and stop (no silent fallback). `--date` + positional
 cards is a hard error: print
 `Error: --date and positional cards are mutually exclusive.` and stop.
@@ -95,4 +96,4 @@ Operating invariants (always `--repo`, body byte-identical outside the footer,
 
 ## Related Skills
 
-`gh:issue-create` / `gh:pr` write the same footer at creation time — this skill only fills the gap for cards that predate them.
+`gh-issue:create` / `gh-pr:create` write the same footer at creation time — this skill only fills the gap for cards that predate them.
