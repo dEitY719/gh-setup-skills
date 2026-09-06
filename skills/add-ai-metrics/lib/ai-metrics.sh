@@ -495,12 +495,18 @@ build_targets_from_date() {
         # lines, and the eventual "no target cards" error reads as "your
         # date genuinely matched nothing" instead of "the lookup broke".
         # Capturing into a plain variable keeps the exit status live.
-        if ! listing=$(gh "$kind" list --repo "$TARGET_REPO" --search "$clause" \
-            --state all --limit 200 --json number --jq '.[].number' 2>&1); then
-            printf '[WARN] gh %s list failed for --date %s -- treating as zero matches: %s\n' \
-                "$kind" "$DATE_ARG" "$(printf '%s' "$listing" | head -1)" >&2
-            continue
-        fi
+        #
+        # Fatal, not a per-kind warn-and-continue: unlike a single card's
+        # write failing mid-loop (which the rest of this script tolerates by
+        # design), a failed discovery call here would silently under-cover
+        # one whole kind -- e.g. every matching Issue, with only PRs actually
+        # backfilled -- and nothing about a clean-looking summary line would
+        # tell the caller that half the intended scope was never even
+        # enumerated. Stop and let the user fix the underlying failure
+        # (auth, network, a malformed --date) and re-run.
+        listing=$(gh "$kind" list --repo "$TARGET_REPO" --search "$clause" \
+            --state all --limit 200 --json number --jq '.[].number' 2>&1) \
+            || die "gh $kind list failed for --date $DATE_ARG: $(printf '%s' "$listing" | head -1)"
         while IFS= read -r line; do
             [ -n "$line" ] || continue
             TARGETS+=("$kind:$line")
@@ -597,6 +603,17 @@ run() {
         if [ "$pending_sleep" = true ]; then
             sleep_pace "$PACE_SECS"
             pending_sleep=false
+            # The sleep itself can push elapsed past --budget. Re-check
+            # right away rather than only at the top of the NEXT iteration:
+            # without this, one more full modify (fetch + gh edit) would
+            # slip through on top of the sleep's own overshoot before the
+            # budget is ever re-read. This bounds the overshoot to at most
+            # one --pace interval -- the sleep in flight is not interrupted
+            # mid-way, only the work that would follow it.
+            if [ "$DRY_RUN" != true ] && check_budget "$(( $(date +%s) - START_TS ))" "$BUDGET_SECS"; then
+                stop_reason="--budget ($(format_duration "$BUDGET_SECS"))"
+                break
+            fi
         fi
 
         if ! fetch_card "$kind" "$n"; then
@@ -751,6 +768,79 @@ self_test() {
     _ok 'estimate_elapsed 8h'   "$(estimate_elapsed 8)"   '24'
     _ok 'estimate_elapsed half' "$(estimate_elapsed 0.5)" '2'
     _ok 'estimate_tokens floor' "$(estimate_tokens 'hi' 'there')" '1000'
+
+    # --- integration regressions -------------------------------------------
+    # Everything above is a pure-function check that never calls `gh`,
+    # `sleep`, or the clock. That gap is exactly how the fetch_card subshell
+    # bug, the trailing/overshooting --pace sleep, and the silent date-filter
+    # list failure all shipped undetected -- each one only exists in the
+    # control flow of run() / build_targets_from_date(), never in a function
+    # small enough for the assertions above to reach. Shadowing `gh`,
+    # `sleep`, and `date` as plain bash functions (name lookup finds a
+    # function before PATH) exercises that control flow with zero network
+    # access and zero real waiting: `date` reads a fake monotonic counter
+    # that only `sleep` advances, so "wall-clock" time is deterministic and
+    # instant.
+    gh() {
+        local sub="$2" n
+        case "$sub" in
+            view) n="$3"; printf 'fix: title #%s\x1fSome body #%s\x1e' "$n" "$n" ;;
+            edit) : ;;
+            list) [ "${_FAKE_GH_LIST_FAILS:-0}" = 0 ] || { printf 'GraphQL: fake failure\n' >&2; return 1; } ;;
+            *) return 1 ;;
+        esac
+    }
+    _fake_clock=0
+    date() { [ "${1:-}" = "+%s" ] && printf '%s\n' "$_fake_clock" || command date "$@"; }
+    _fake_sleep_calls=0
+    sleep() { _fake_sleep_calls=$((_fake_sleep_calls + 1)); _fake_clock=$((_fake_clock + ${1:-0})); }
+
+    TARGET_REPO="fake/repo"
+    CARD_TITLE=""; CARD_BODY=""
+    fetch_card issue 42
+    _ok 'fetch_card propagates CARD_TITLE (regression: was called via $(...), a subshell)' \
+        "$CARD_TITLE" 'fix: title #42'
+    _ok 'fetch_card propagates CARD_BODY (regression: was called via $(...), a subshell)' \
+        "$CARD_BODY" 'Some body #42'
+
+    # run() is called via `run > "$_run_tmp"`, never `out=$(run)`: the same
+    # command-substitution subshell that ate fetch_card's globals would also
+    # run() this eat _fake_sleep_calls / _fake_clock, since sleep() mutates
+    # them as a side effect the assertions below depend on.
+    _run_tmp=$(mktemp)
+
+    TARGETS=(issue:1 issue:2 issue:3)
+    TYPE=""; FORCE=false; DRY_RUN=false; LIMIT=""; BUDGET_SECS=0; PACE_SECS=5
+    START_TS=0; _fake_clock=0
+    run > "$_run_tmp"
+    _ok 'run() paces exactly N-1 sleeps for N writes (never after the last card)' \
+        "$_fake_sleep_calls" '2'
+    _ok 'run() wrote all 3 cards end to end (fetch_card + pacing together)' \
+        "$(grep -c '^\[OK\] added #[123] fix: title #[123]$' "$_run_tmp")" '3'
+
+    TARGETS=(issue:1 issue:2 issue:3 issue:4)
+    BUDGET_SECS=1; PACE_SECS=2; LIMIT=""; START_TS=0; _fake_clock=0
+    run > "$_run_tmp"
+    _ok 'run() re-checks --budget right after the deferred sleep (regression: one extra modify used to slip through)' \
+        "$(grep -c '^\[OK\]' "$_run_tmp")" '1'
+
+    TARGETS=(issue:1 issue:2)
+    BUDGET_SECS=0; PACE_SECS=0; LIMIT=1; START_TS=0; _fake_clock=0
+    run > "$_run_tmp"
+    _ok 'run() --limit stops after N modified cards, not N+1' \
+        "$(grep -c '^\[OK\]' "$_run_tmp")" '1'
+    rm -f "$_run_tmp"
+
+    if ( _FAKE_GH_LIST_FAILS=1 DATE_ARG=26-04 TYPE=issue TARGET_REPO=fake/repo \
+             build_targets_from_date ) >/dev/null 2>&1; then
+        rc=0
+    else
+        rc=$?
+    fi
+    _ok 'build_targets_from_date dies loudly on a failed gh list (regression: was a silent zero-match)' \
+        "$rc" '1'
+
+    unset -f gh sleep date
 
     printf 'all self-tests passed\n'
 }
