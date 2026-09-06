@@ -339,19 +339,30 @@ title_prefix() {
 # that table stays the SSOT and this file holds no second copy. `feat` sizing
 # needs conversation context that is gone post-hoc, so it always takes medium.
 # Unknown or absent prefix falls back to misc (2 h).
+_human_hours_lookup() {
+    local want="$1"
+    awk -F'|' -v want="$want" '
+        NF >= 4 {
+            key = $2; val = $3
+            gsub(/^[ \t]+|[ \t]+$/, "", key)
+            gsub(/^[ \t]+|[ \t]+$/, "", val)
+            if (key == want) { sub(/ *h.*/, "", val); print val; exit }
+        }' "$BASELINE_FILE" 2>/dev/null || true
+}
+
+# Unknown / absent prefix falls back to the table's own `misc` row -- not a
+# hardcoded literal -- so a future edit to that row (references/metrics-
+# baseline.md, the declared SSOT) can't silently diverge from this fallback.
+# `2` is a last-resort only for the pathological case where the baseline
+# file itself is missing or has no `misc` row at all.
 human_hours() {
     local prefix="$1" want hours
     case "$prefix" in
         feat) want='`feat` (medium)' ;;
         *)    want="\`$prefix\`" ;;
     esac
-    hours=$(awk -F'|' -v want="$want" '
-        NF >= 4 {
-            key = $2; val = $3
-            gsub(/^[ \t]+|[ \t]+$/, "", key)
-            gsub(/^[ \t]+|[ \t]+$/, "", val)
-            if (key == want) { sub(/ *h.*/, "", val); print val; exit }
-        }' "$BASELINE_FILE" 2>/dev/null || true)
+    hours=$(_human_hours_lookup "$want")
+    [ -n "$hours" ] || hours=$(_human_hours_lookup '`misc`')
     [ -n "$hours" ] || hours=2
     printf '%s\n' "$hours"
 }
@@ -822,12 +833,20 @@ self_test() {
     # access and zero real waiting: `date` reads a fake monotonic counter
     # that only `sleep` advances, so "wall-clock" time is deterministic and
     # instant.
+    # _FAKE_GH_LIST_FAILS: unset/0 = never fail; "all" = fail every kind;
+    # "issue"/"pr" = fail only that kind's `list` call, so the "one kind
+    # succeeds, the other fails mid-loop" case is reachable too.
     gh() {
-        local sub="$2" n
+        local kind="$1" sub="$2" n
         case "$sub" in
             view) n="$3"; printf 'fix: title #%s\x1fSome body #%s\x1e' "$n" "$n" ;;
             edit) : ;;
-            list) [ "${_FAKE_GH_LIST_FAILS:-0}" = 0 ] || { printf 'GraphQL: fake failure\n' >&2; return 1; } ;;
+            list)
+                case "${_FAKE_GH_LIST_FAILS:-0}" in
+                    0) ;;
+                    all|"$kind") printf 'GraphQL: fake failure\n' >&2; return 1 ;;
+                esac
+                ;;
             *) return 1 ;;
         esac
     }
@@ -872,13 +891,24 @@ self_test() {
         "$(grep -c '^\[OK\]' "$_run_tmp")" '1'
     rm -f "$_run_tmp"
 
-    if ( _FAKE_GH_LIST_FAILS=1 DATE_ARG=26-04 TYPE=issue TARGET_REPO=fake/repo \
+    if ( _FAKE_GH_LIST_FAILS=all DATE_ARG=26-04 TYPE=issue TARGET_REPO=fake/repo \
              build_targets_from_date ) >/dev/null 2>&1; then
         rc=0
     else
         rc=$?
     fi
     _ok 'build_targets_from_date dies loudly on a failed gh list (regression: was a silent zero-match)' \
+        "$rc" '1'
+
+    # No --type: both kinds are queried. `issue` succeeds, `pr` fails --
+    # must still die rather than complete a partial (issue-only) backfill.
+    if ( _FAKE_GH_LIST_FAILS=pr DATE_ARG=26-04 TYPE="" TARGET_REPO=fake/repo \
+             build_targets_from_date ) >/dev/null 2>&1; then
+        rc=0
+    else
+        rc=$?
+    fi
+    _ok 'build_targets_from_date dies even when only ONE kind fails (never a partial backfill)' \
         "$rc" '1'
 
     unset -f gh sleep date
