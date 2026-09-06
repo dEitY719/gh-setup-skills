@@ -22,10 +22,7 @@ length of the previous footer (~150 chars), feeding back into a slowly
 growing token estimate. The strip is also a no-op when no footer
 exists, so it is safe to run unconditionally.
 
-```bash
-stripped=$(printf '%s' "$body" \
-  | perl -0777 -pe 's|\n+---\n(?:<details>\n<summary>[^\n]*</summary>\n\n)?<!-- ai-metrics(?::[A-Za-z0-9_-]+)? -->.*?<!-- /ai-metrics(?::[A-Za-z0-9_-]+)? -->(?:\n\n</details>)?\n?||s')
-```
+Implemented as `strip_footer` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
 
 Regex notes:
 
@@ -55,21 +52,18 @@ TOKENS = max(1000, round_to_500((len(title) + len(stripped)) / 4))
 
 Bash (consumes `$stripped` from the always-strip step above):
 
-```bash
-chars=$(printf '%s%s' "$title" "$stripped" | wc -m | awk '{print $1}')
-tokens=$(( (chars / 4 + 250) / 500 * 500 ))
-[ "$tokens" -lt 1000 ] && tokens=1000
-```
+Implemented as `estimate_tokens` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
+
+It consumes the stripped body from `strip_footer`.
 
 ## HUMAN_H
 
 Lookup by conventional-commit prefix in the title. The prefix is the
 first `[a-z]+` group before an optional `(scope)` and a literal `:`.
 
-```bash
-prefix=$(printf '%s' "$title" | sed -nE 's/^([a-z]+)(\([^)]*\))?:.*/\1/p')
-prefix=${prefix:-misc}
-```
+Implemented as `title_prefix` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
+
+An absent or unparseable prefix falls back to `misc`.
 
 Mapping — the SSOT is the "Human Time Lookup Table" in
 [`references/metrics-baseline.md`](metrics-baseline.md). Do not duplicate it
@@ -89,9 +83,11 @@ ELAPSED = max(1, round(HUMAN_H * 0.05 * 60)) / 60   # in hours, but printed as m
 
 Equivalently, in minutes:
 
-```bash
-elapsed_min=$(awk -v h="$human_h" 'BEGIN { v = h * 60 * 0.05; printf "%d", (v < 1 ? 1 : v + 0.5) }')
-```
+Implemented as `human_hours` / `estimate_elapsed` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
+
+`human_hours` parses the lookup table out of
+[`references/metrics-baseline.md`](metrics-baseline.md) at run time rather than
+carrying a second copy of it.
 
 The 5% factor reflects the observed ratio in dEitY719/dotfiles#320's own footer
 (`👤 ~8 h · 🤖 ~15 min` ≈ 3.1%, rounded up for safety) and is intentionally

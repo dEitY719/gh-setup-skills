@@ -1,7 +1,8 @@
 # Footer Detection + Replacement
 
-Detection and edit logic for the `<!-- ai-metrics -->` footer used by
-`gh-setup:add-ai-metrics`. Keep regexes here so SKILL.md can stay workflow-only.
+Contract for the `<!-- ai-metrics -->` footer used by
+`gh-setup:add-ai-metrics`. The marker grammar is documented here; the code that
+applies it lives in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
 
 ## Marker grammar
 
@@ -30,21 +31,14 @@ pair**: a `---` separator on its own line preceded by 1+ newlines,
 immediately followed by the OPEN marker on its own line, content, then
 the CLOSE marker on its own line.
 
-```bash
-has_footer() {
-  # Returns 0 (true) only when an OPEN+CLOSE block follows the `---`
-  # separator that gh-issue:create / PR dEitY719/dotfiles#320 emit. Inline mentions
-  # (`<!-- ai-metrics -->` in backticks) do not match. The leading
-  # `\n+` tolerates both PR dEitY719/dotfiles#320's `\n---\n` (single) and the newer
-  # `\n\n---\n` (double) append conventions.
-  # The optional `<details>…</summary>\n\n` allows the new dEitY719/dotfiles#367 wrapped form.
-  printf '%s' "$1" | perl -0777 -ne '
-    exit (
-      /\n+---\n(?:<details>\n<summary>[^\n]*<\/summary>\n\n)?<!-- ai-metrics(?::[A-Za-z0-9_-]+)? -->\n.*?\n<!-- \/ai-metrics(?::[A-Za-z0-9_-]+)? -->/s
-      ? 0 : 1
-    )'
-}
-```
+Implemented as `has_footer` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
+
+It returns 0 (true) only when an OPEN+CLOSE block follows the `---` separator
+that `gh-issue:create` / PR dEitY719/dotfiles#320 emit. Inline mentions
+(`<!-- ai-metrics -->` inside backticks) do not match. The leading `\n+`
+tolerates both PR dEitY719/dotfiles#320's `\n---\n` (single) and the newer
+`\n\n---\n` (double) append conventions, and the optional
+`<details>…</summary>\n\n` allows the dEitY719/dotfiles#367 wrapped form.
 
 Why perl, not `grep -P`: the multiline `.*?\n` slurp requires `-0777`,
 which has no GNU grep equivalent. Perl is a hard dep of the gh CLI's
@@ -52,13 +46,7 @@ shipping environment, so this stays portable.
 
 ## Append (no existing footer)
 
-```bash
-append_footer() {
-  local body="$1" tokens="$2" human="$3" elapsed="$4"
-  printf '%s\n\n---\n<details>\n<summary>🤖 AI Metrics · 📊 ~%s tokens · 👤 ~%s h · 🤖 ~%s min</summary>\n\n<!-- ai-metrics -->\n📊 ~%s tokens · 👤 ~%s h · 🤖 ~%s min\n<!-- /ai-metrics -->\n\n</details>\n' \
-    "$body" "$tokens" "$human" "$elapsed" "$tokens" "$human" "$elapsed"
-}
-```
+Implemented as `append_footer` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
 
 The leading `\n\n---\n` ensures the footer is visually separated from the
 preceding section even when the original body did not end with a newline.
@@ -71,19 +59,15 @@ the PR/issue body readable while the metrics remain accessible on click.
 perl is unavailable (rare). We always emit the new `<details>`-wrapped form
 regardless of which form was found — this upgrades old-format footers in place.
 
-```bash
-replace_footer() {
-  local body="$1" tokens="$2" human="$3" elapsed="$4"
-  local new_block
-  new_block=$(printf '<details>\n<summary>🤖 AI Metrics · 📊 ~%s tokens · 👤 ~%s h · 🤖 ~%s min</summary>\n\n<!-- ai-metrics -->\n📊 ~%s tokens · 👤 ~%s h · 🤖 ~%s min\n<!-- /ai-metrics -->\n\n</details>' \
-    "$tokens" "$human" "$elapsed" "$tokens" "$human" "$elapsed")
-  printf '%s' "$body" \
-    | NEW="$new_block" perl -0777 -pe '
-        BEGIN { $n = $ENV{NEW} }
-        s|(?:<details>\n<summary>[^\n]*</summary>\n\n)?<!-- ai-metrics(?::[A-Za-z0-9_-]+)? -->.*?<!-- /ai-metrics(?::[A-Za-z0-9_-]+)? -->(?:\n\n</details>)?|$n|s
-      '
-}
-```
+Implemented as `replace_footer` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh).
+
+It is anchored on the same `\n+---\n` separator as `has_footer`, and for the
+same reason: unanchored, the pattern's first match is an inline mention of the
+marker in the body, and everything between that mention and the real closing
+marker is replaced — silent user-text loss on exactly the bodies `has_footer`
+was hardened against. The separator is captured and restored. The replacement
+text is carried in `$NEW` through the environment so newline-bearing
+replacements survive the substitution untouched.
 
 The `BEGIN`-block pattern reads `$NEW` from the env so newline-bearing
 replacements survive the perl substitution untouched (no `$1` collision).
@@ -95,12 +79,8 @@ old bare form and the new wrapped form, enabling in-place upgrade.
 `replace_footer` returns the original body unchanged when the regex does
 not match. Detect that and degrade to `append_footer`:
 
-```bash
-new_body=$(replace_footer "$body" "$tokens" "$human" "$elapsed")
-if [ "$new_body" = "$body" ]; then
-  new_body=$(append_footer "$body" "$tokens" "$human" "$elapsed")
-fi
-```
+`replace_footer` returns the original body unchanged when the regex does not
+match; `run()` detects that and degrades to `append_footer`.
 
 This keeps `--force` semantically "ensure the footer reflects current
 metrics" even when the card never had one.
@@ -110,11 +90,10 @@ metrics" even when the card never had one.
 Always write to `mktemp` first — direct `--body "$str"` mishandles backticks
 and large bodies. Use `gh issue edit` for issues, `gh pr edit` for PRs.
 
-```bash
-TMP=$(mktemp) && trap 'rm -f "$TMP"' EXIT
-printf '%s' "$new_body" > "$TMP"
-gh "$kind" edit "$N" --repo "$TARGET_REPO" --body-file "$TMP"
-```
+Handled by `write_body` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh): it always writes to
+`mktemp` first, because `--body "$str"` mishandles backticks and large bodies.
+`gh issue edit` for issues, `gh pr edit` for PRs — the rest of the command is
+identical.
 
 `$kind` ∈ `{issue, pr}`; the rest of the command is identical.
 
