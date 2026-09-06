@@ -5,7 +5,8 @@
 ```
 /gh-setup:add-ai-metrics [<targets>] [--type issue|PR] [--date <date>]
                    [--pace <dur>] [--limit <N>] [--budget <dur>] [--dry-run]
-                   [--force] [--remote <name>]
+                   [--force] [--remote <name>] [--repo <owner/repo>]
+                   [--confirm-large]
 ```
 
 `<targets>` are space-separated `issue#N` / `pr#M` tokens (case-insensitive).
@@ -26,6 +27,8 @@ duration: `30s`, `5m`, `1h`, `1h30m`.
 | flag | `--dry-run` | off | Classify the target list without writing anything. View calls still happen (needed for state classification). |
 | flag | `--force` | off | Recompute metrics and replace an existing footer (default skips). |
 | flag | `--remote <name>` | `origin` | Override the target remote. |
+| flag | `--repo <owner/repo>` | resolved from `--remote` | Skip remote resolution and target this repo directly. |
+| flag | `--confirm-large` | off | Proceed past the 100-card threshold. Set only after the user actually answered `y` — it is not a blanket `--yes`. |
 | flag | `-h` / `--help` / `help` | — | Print this help and stop. |
 
 ## Date forms (used with `--date`)
@@ -132,12 +135,6 @@ estimated. Detail in `post-hoc-metrics.md`; summary:
 These values are deterministic given the same body, so re-running the
 skill with `--force` produces stable output (no flapping).
 
-## What this skill will NOT do
+## Operating invariants
 
-- Re-run the original AI conversation to recover real token counts.
-- Modify card body outside the footer block.
-- Auto-create labels, assignees, or milestones.
-- Silently fall back to `origin` when `--remote <name>` is missing.
-- Process more than 100 cards without explicit `y` confirmation.
-- Mutate cards on the skip path (no body diff, no API call, no sleep).
-- Run cards in parallel (`--pace` is intentionally serial).
+The full list (SSOT) is `constraints.md`, one link away — not restated here.

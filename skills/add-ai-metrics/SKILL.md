@@ -10,7 +10,7 @@ license: MIT
 metadata:
   model_recommendation:
     tier: haiku
-    reason: "metadata backfill via gh CLI"
+    reason: "metadata backfill; wraps lib/ai-metrics.sh, bounded output, low reasoning"
     claude: prefer
     non_claude: advisory-only
 ---
@@ -27,72 +27,66 @@ block are never modified. Full flag / call-pattern table: `references/help.md`.
 If arg #1 is `-h`, `--help`, or `help`, read `references/help.md` and
 output its content verbatim, then stop. No API calls.
 
-## Step 1: Parse Args + Resolve Repo
+## Step 1: Resolve Skill Dir
 
-Record `START_TS=$(date +%s)` immediately for the final summary line.
+Everything executable lives at `${SKILL_DIR}/lib/ai-metrics.sh` — date
+parsing, footer detection, the metric estimates, pacing and the per-card
+loop. Wrap it; do not re-derive its logic here. It reads the Human Time
+Lookup Table from `${SKILL_DIR}/references/metrics-baseline.md` as a
+sibling of `lib/`, so the skill stays self-contained.
 
-Parse args per the table in `references/help.md` — positional `issue#N` /
-`pr#M` (case-insensitive), flags `--type`, `--date`, `--force`, `--remote`,
-plus the pacing flags `--pace`, `--limit`, `--budget`, `--dry-run`.
+## Step 2: Build the Argument List
 
-`--date` accepts single day / whole month / half-open range (`..` / `~`)
-per `parse_date_arg` in `references/date-parsing.md` (SSOT).
-`--pace`/`--budget` accept durations (`30s`/`5m`/`1h30m`) via
-`parse_duration` in `references/pace-control.md`; `--limit` a positive
-integer; `--dry-run` a boolean.
+Pass the user's flags through unchanged. The script owns validation and
+prints the error itself (`--type` values, `--date` forms, duration shapes,
+the `--date`/positional mutex, an unresolvable `--remote`).
 
-Resolve `TARGET_REPO` + `TARGET_HOST` per
-[`references/repo-resolution.md`](references/repo-resolution.md). Missing remote → list
-`git remote -v` and stop (no silent fallback). `--date` + positional
-cards is a hard error: print
-`Error: --date and positional cards are mutually exclusive.` and stop.
+The one thing the script cannot do is read the conversation. When the user
+gave neither positional cards nor `--date`, resolve targets first:
 
-## Step 2: Determine Mode + Build Target List
+- Scan recent turns for `#NNN` paired with an `issue`/`PR`/`pr` cue — bare
+  numbers are ignored. Pass what you find as `issue#N` / `pr#M`.
+- Nothing found → stop with
+  `Error: no issue/PR references in conversation; pass them explicitly.`
 
-First match wins:
+## Step 3: Dry-run First
 
-1. `--date` → **date-filter mode**: `parse_date_arg` →
-   `build_search_clause` → `created:...` fragment, then `gh issue/pr list`
-   (filtered by `--type`) `--search "<clause>" --state all --limit 200
-   --json number,title`. The 200 cap stays — wider ranges split by user.
-2. Positional cards → **explicit-list mode**: validate each `N` positive,
-   dedupe, preserve order.
-3. Otherwise → **conversation-infer mode**: scan recent turns for `#NNN`
-   paired with `issue`/`PR`/`pr` cues (bare numbers ignored); none →
-   `Error: no issue/PR references in conversation; pass them explicitly.`
+```
+bash "${SKILL_DIR}/lib/ai-metrics.sh" --dry-run <user-flags>
+```
 
-If `|targets| > 100`, prompt `Continue with N cards? [y/N]:` (default no).
-`--limit` does not suppress it — it guards against huge target lists.
+Print the classification rows (`· will-write` / `· will-force-replace` /
+`· will-skip`) and the `DRY RUN:` summary block verbatim. Zero `gh edit`
+calls happen here. Non-zero exit → abort and quote the script's first
+stderr line; never proceed to the real run after a failed dry-run.
 
-## Step 3: Per-Card Loop
+If the run stops on the 100-card threshold, relay
+`Continue with N cards?` to the user and re-invoke with `--confirm-large`
+only after they actually answer yes.
 
-`--dry-run` → take the dry-run branch in `references/pace-control.md`
-(per-card view fetch, `· will-write`/`· will-skip`/`· will-force-replace`
-rows, dry-run summary, **never `gh edit`**), then stop.
+## Step 4: Real Run + Report
 
-Otherwise iterate per `references/footer-detection.md` (SSOT — not
-restated here): top-of-iteration stop check (`--budget`/`--limit` via
-`check_budget`, see `references/pace-control.md` → "Stop-reason
-composition"), fetch, detect `<!-- ai-metrics -->`, branch
-no-footer→append / footer→skip / footer+`--force`→in-place replace,
-`gh edit` + `sleep_pace` on modify only, one-line status, continue on
-failure. Metric values follow `references/post-hoc-metrics.md`.
+```
+bash "${SKILL_DIR}/lib/ai-metrics.sh" <user-flags>
+```
 
-## Step 4: Final Report
-
-Print the summary line + context-only ai-metrics line per the "Final
-report output format" section in `references/footer-detection.md`, after
-computing `ELAPSED=$(( ($(date +%s) - START_TS) / 60 ))`. On early exit
-via `--limit`/`--budget`, append a `Stopped early: <stop_reason>; <X>
-cards remaining. Re-run to resume (idempotent).` line. For `--dry-run`,
-the report is the dry-run summary block from `references/pace-control.md`
-instead — no per-card metrics, no counters.
+Surface every per-card line (`[OK]` / `[REPLACED]` / `[SKIP]` / `[FAIL]`)
+and the closing report verbatim: the `Summary:` counters, the
+`[ai-metrics:...]` context line, and — when `--limit` or `--budget` fired —
+the `Stopped early: …; Re-run to resume (idempotent).` line. A per-card
+failure never aborts the loop, so do not stop on one.
 
 ## Constraints
 
-Operating invariants (always `--repo`, body byte-identical outside the footer,
-`--force` recompute-not-overwrite, continue-on-error, pacing, `--limit`/
-`--budget` OR-semantics) live in [`references/constraints.md`](references/constraints.md).
+Operating invariants live in
+[`references/constraints.md`](references/constraints.md); `lib/ai-metrics.sh`
+enforces them. Two rules bind this wrapper:
+
+- Never mutate the script's behavior — wrap, don't rewrite, and never
+  swallow a `[FAIL]` line to keep an exit code clean.
+- `lib/ai-metrics.sh` is the sole entry point; invoke it directly from
+  non-Claude contexts:
+  `bash skills/add-ai-metrics/lib/ai-metrics.sh [...]`.
 
 ## Related Skills
 
