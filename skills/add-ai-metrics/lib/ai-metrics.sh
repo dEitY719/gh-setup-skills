@@ -38,6 +38,7 @@ PACE_SECS=0
 BUDGET_SECS=0
 LIMIT=""
 TARGETS=()
+AMBIGUOUS=()
 
 die() {
     printf 'Error: %s\n' "$1" >&2
@@ -341,32 +342,53 @@ estimate_elapsed() {
 # card bodies in the wrong repo (dEitY719/dotfiles#1403).
 resolve_repo() {
     local url="" ssot u
+
     if [ -n "$REPO" ]; then
+        # --repo names the target explicitly and may point at a repo on a
+        # different host than this checkout's own $REMOTE entirely -- the
+        # local remote's URL is not evidence of anything here. (The earlier
+        # version borrowed the host from $REMOTE regardless of --repo, which
+        # silently targeted the wrong GitHub server whenever the two named
+        # different hosts -- exactly the #1403 failure mode.) Honor an
+        # already-exported GH_HOST; otherwise fall back to the setup-mode
+        # mapping, then github.com -- never to the local remote's host.
         TARGET_REPO="$REPO"
-        url=$(git remote get-url "$REMOTE" 2>/dev/null || true)
+        TARGET_HOST=""
+        if [ -n "${GH_HOST:-}" ]; then
+            TARGET_HOST="$GH_HOST"
+        else
+            ssot="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
+            if [ -r "$ssot" ]; then
+                # shellcheck source=/dev/null
+                . "$ssot"
+                TARGET_HOST=$(_gh_resolve_host 2>/dev/null || true)
+            fi
+        fi
+        [ -n "$TARGET_HOST" ] || TARGET_HOST="github.com"
     else
         git rev-parse --show-toplevel >/dev/null 2>&1 || die "not inside a git repository."
         url=$(git remote get-url "$REMOTE" 2>/dev/null) \
             || die "remote '$REMOTE' not found. Available remotes:
 $(git remote -v)"
+
+        TARGET_HOST=""
+        ssot="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
+        if [ -r "$ssot" ]; then
+            # gh_host.sh is the SSOT for host/URL mapping when dotfiles is present.
+            # shellcheck source=/dev/null
+            . "$ssot"
+            TARGET_REPO=$(_gh_parse_owner_repo_url "$url" 2>/dev/null || true)
+            TARGET_HOST=$(_gh_host_from_url "$url" 2>/dev/null || _gh_resolve_host 2>/dev/null || true)
+        else
+            # Standalone install -- strip scheme, credentials and the .git
+            # suffix, then split on the first ':' or '/'.
+            u=${url%.git}; u=${u#*://}; u=${u#*@}
+            TARGET_HOST=${u%%[:/]*}
+            TARGET_REPO=${u#*[:/]}
+        fi
+        [ -n "$TARGET_HOST" ] || TARGET_HOST="github.com"
     fi
 
-    TARGET_HOST=""
-    ssot="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
-    if [ -n "$url" ] && [ -r "$ssot" ]; then
-        # gh_host.sh is the SSOT for host/URL mapping when dotfiles is present.
-        # shellcheck source=/dev/null
-        . "$ssot"
-        [ -n "$REPO" ] || TARGET_REPO=$(_gh_parse_owner_repo_url "$url" 2>/dev/null || true)
-        TARGET_HOST=$(_gh_host_from_url "$url" 2>/dev/null || _gh_resolve_host 2>/dev/null || true)
-    elif [ -n "$url" ]; then
-        # Standalone install -- strip scheme, credentials and the .git suffix,
-        # then split on the first ':' or '/'.
-        u=${url%.git}; u=${u#*://}; u=${u#*@}
-        TARGET_HOST=${u%%[:/]*}
-        [ -n "$REPO" ] || TARGET_REPO=${u#*[:/]}
-    fi
-    [ -n "$TARGET_HOST" ] || TARGET_HOST="github.com"
     [ -n "${TARGET_REPO:-}" ] || die "could not resolve owner/repo from remote '$REMOTE'."
     # An empty GH_HOST is exactly the silent wrong-host state of #1403.
     export GH_HOST="$TARGET_HOST"
@@ -415,12 +437,30 @@ parse_args() {
                 case "$raw" in
                     issue#*) n="${raw#issue#}"; _add_target issue "$n" ;;
                     pr#*)    n="${raw#pr#}";    _add_target pr "$n" ;;
-                    \#*)     n="${raw#\#}";     _add_target "${TYPE:-issue}" "$n" ;;
-                    *)       _add_target "${TYPE:-issue}" "$raw" ;;
+                    # A bare `#N` / `N` names no kind. `gh issue view/edit`
+                    # silently succeeds on a PR number too (PRs are issues
+                    # under the REST API), so guessing "issue" here would
+                    # write the footer onto the wrong card with no error --
+                    # exactly the silent mis-target #1403 exists to prevent.
+                    # Queue it and resolve against --type once the whole
+                    # command line has been parsed (--type may appear after
+                    # this token).
+                    \#*)     n="${raw#\#}";     AMBIGUOUS+=("$n") ;;
+                    *)       AMBIGUOUS+=("$raw") ;;
                 esac
                 shift ;;
         esac
     done
+
+    if [ "${#AMBIGUOUS[@]}" -gt 0 ]; then
+        if [ -n "$TYPE" ]; then
+            for n in "${AMBIGUOUS[@]}"; do
+                _add_target "$TYPE" "$n"
+            done
+        else
+            die "ambiguous card number(s) '${AMBIGUOUS[*]}' -- prefix with issue#/pr# or pass --type."
+        fi
+    fi
 
     [ -z "$DATE_ARG" ] || [ "${#TARGETS[@]}" -eq 0 ] \
         || die "--date and positional cards are mutually exclusive."
@@ -520,19 +560,11 @@ run() {
         kind="${entry%%:*}"
         n="${entry#*:}"
 
-        # A pace sleep is credited to the modify that earned it but deferred
-        # to the top of the NEXT iteration -- so it still lands "after that
-        # modify" for any card but the last, and simply never fires when the
-        # modify was the last target in the run (no next iteration exists to
-        # trigger it). This also means a skip-only tail after the final
-        # modify costs one sleep, not one per skip.
-        if [ "$pending_sleep" = true ]; then
-            sleep_pace "$PACE_SECS"
-            pending_sleep=false
-        fi
-
         # Stop check at the TOP of the iteration, in seconds (not the
-        # minutes-rounded figure the final report prints).
+        # minutes-rounded figure the final report prints), and BEFORE the
+        # deferred pace sleep below: checking after it would let a card that
+        # is about to be skipped anyway overshoot --budget by a full --pace
+        # interval just to discover the budget was already spent.
         if [ "$DRY_RUN" != true ]; then
             elapsed_secs=$(( $(date +%s) - START_TS ))
             if check_budget "$elapsed_secs" "$BUDGET_SECS"; then
@@ -543,6 +575,17 @@ run() {
                 stop_reason="--limit ($LIMIT cards modified)"
                 break
             fi
+        fi
+
+        # A pace sleep is credited to the modify that earned it but deferred
+        # to here -- so it still lands "after that modify" for any card but
+        # the last, and simply never fires when the modify was the last
+        # target in the run (the budget/limit check above already broke out,
+        # or the loop is simply over). This also means a skip-only tail
+        # after the final modify costs one sleep, not one per skip.
+        if [ "$pending_sleep" = true ]; then
+            sleep_pace "$PACE_SECS"
+            pending_sleep=false
         fi
 
         if ! fetch_card "$kind" "$n"; then
