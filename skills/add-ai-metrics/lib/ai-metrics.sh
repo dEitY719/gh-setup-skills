@@ -480,7 +480,7 @@ _add_target() {
 
 # The 200 cap stays -- a wider range is split by the user, not paginated here.
 build_targets_from_date() {
-    local parsed kind a b clause line
+    local parsed kind a b clause line listing
     parsed=$(parse_date_arg "$DATE_ARG") \
         || die "--date: unrecognized form '$DATE_ARG' (YY-MM, YYYY-MM-DD, A..B)."
     read -r kind a b <<<"$parsed"
@@ -489,11 +489,22 @@ build_targets_from_date() {
     local kinds=(issue pr)
     [ -z "$TYPE" ] || kinds=("$TYPE")
     for kind in "${kinds[@]}"; do
+        # A plain `... < <(gh ... || true)` process substitution would hide
+        # gh's exit status from the caller entirely: a failed API call (bad
+        # auth, network, malformed search clause) silently produces zero
+        # lines, and the eventual "no target cards" error reads as "your
+        # date genuinely matched nothing" instead of "the lookup broke".
+        # Capturing into a plain variable keeps the exit status live.
+        if ! listing=$(gh "$kind" list --repo "$TARGET_REPO" --search "$clause" \
+            --state all --limit 200 --json number --jq '.[].number' 2>&1); then
+            printf '[WARN] gh %s list failed for --date %s -- treating as zero matches: %s\n' \
+                "$kind" "$DATE_ARG" "$(printf '%s' "$listing" | head -1)" >&2
+            continue
+        fi
         while IFS= read -r line; do
             [ -n "$line" ] || continue
             TARGETS+=("$kind:$line")
-        done < <(gh "$kind" list --repo "$TARGET_REPO" --search "$clause" \
-            --state all --limit 200 --json number --jq '.[].number' 2>/dev/null || true)
+        done <<<"$listing"
     done
 }
 
