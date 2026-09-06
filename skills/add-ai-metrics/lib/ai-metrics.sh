@@ -37,8 +37,6 @@ CONFIRM_LARGE=false
 PACE_SECS=0
 BUDGET_SECS=0
 LIMIT=""
-PACE_RAW="unset"
-BUDGET_RAW="unset"
 TARGETS=()
 
 die() {
@@ -298,7 +296,7 @@ strip_footer() {
 # multibyte Korean text counts as characters, not bytes.
 estimate_tokens() {
     local title="$1" stripped="$2" chars tokens
-    chars=$(printf '%s%s' "$title" "$stripped" | wc -m | awk '{print $1}')
+    chars=$(printf '%s%s' "$title" "$stripped" | wc -m)
     tokens=$(( (chars / 4 + 250) / 500 * 500 ))
     [ "$tokens" -lt 1000 ] && tokens=1000
     printf '%s\n' "$tokens"
@@ -348,11 +346,9 @@ resolve_repo() {
         url=$(git remote get-url "$REMOTE" 2>/dev/null || true)
     else
         git rev-parse --show-toplevel >/dev/null 2>&1 || die "not inside a git repository."
-        if ! url=$(git remote get-url "$REMOTE" 2>/dev/null); then
-            printf "Error: remote '%s' not found. Available remotes:\n" "$REMOTE" >&2
-            git remote -v >&2
-            exit 1
-        fi
+        url=$(git remote get-url "$REMOTE" 2>/dev/null) \
+            || die "remote '$REMOTE' not found. Available remotes:
+$(git remote -v)"
     fi
 
     TARGET_HOST=""
@@ -400,14 +396,14 @@ parse_args() {
             --dry-run) DRY_RUN=true; shift ;;
             --confirm-large) CONFIRM_LARGE=true; shift ;;
             --pace)
-                PACE_RAW="${2:-}"
-                PACE_SECS=$(parse_duration "$PACE_RAW") \
-                    || die "--pace: bad duration '$PACE_RAW' (use 30s / 5m / 1h30m)."
+                raw="${2:-}"
+                PACE_SECS=$(parse_duration "$raw") \
+                    || die "--pace: bad duration '$raw' (use 30s / 5m / 1h30m)."
                 shift 2 ;;
             --budget)
-                BUDGET_RAW="${2:-}"
-                BUDGET_SECS=$(parse_duration "$BUDGET_RAW") \
-                    || die "--budget: bad duration '$BUDGET_RAW' (use 30s / 5m / 1h30m)."
+                raw="${2:-}"
+                BUDGET_SECS=$(parse_duration "$raw") \
+                    || die "--budget: bad duration '$raw' (use 30s / 5m / 1h30m)."
                 shift 2 ;;
             --limit)
                 LIMIT="${2:-}"
@@ -482,9 +478,8 @@ fetch_card() {
 }
 
 compute_metrics() {
-    local stripped prefix
-    stripped=$(strip_footer "$CARD_BODY")
-    M_TOKENS=$(estimate_tokens "$CARD_TITLE" "$stripped")
+    local body="$1" prefix
+    M_TOKENS=$(estimate_tokens "$CARD_TITLE" "$body")
     prefix=$(title_prefix "$CARD_TITLE")
     M_HUMAN=$(human_hours "$prefix")
     M_ELAPSED=$(estimate_elapsed "$M_HUMAN")
@@ -578,7 +573,7 @@ run() {
                 printf '· will-force-replace #%s %s\n' "$n" "$CARD_TITLE"
                 continue
             fi
-            compute_metrics
+            compute_metrics "$(strip_footer "$CARD_BODY")"
             new_body=$(replace_footer "$CARD_BODY" "$M_TOKENS" "$M_HUMAN" "$M_ELAPSED")
             if write_body "$kind" "$n" "$new_body"; then
                 replaced=$((replaced + 1)); modified=$((modified + 1))
@@ -596,7 +591,7 @@ run() {
             printf '· will-write #%s %s\n' "$n" "$CARD_TITLE"
             continue
         fi
-        compute_metrics
+        compute_metrics "$CARD_BODY"
         # --force on a card with no footer degrades to a plain append.
         new_body=$(append_footer "$CARD_BODY" "$M_TOKENS" "$M_HUMAN" "$M_ELAPSED")
         if write_body "$kind" "$n" "$new_body"; then
@@ -613,7 +608,9 @@ run() {
         printf 'DRY RUN: %s cards (%s will-write, %s will-force-replace, %s will-skip)\n' \
             "$total" "$will_write" "$will_replace" "$will_skip"
         printf '         pace=%s budget=%s limit=%s\n' \
-            "$PACE_RAW" "$BUDGET_RAW" "${LIMIT:-unset}"
+            "$([ "$PACE_SECS" -gt 0 ] && format_duration "$PACE_SECS" || echo unset)" \
+            "$([ "$BUDGET_SECS" -gt 0 ] && format_duration "$BUDGET_SECS" || echo unset)" \
+            "${LIMIT:-unset}"
         printf '         estimated wall-clock: %s\n' \
             "$(compute_eta $((will_write + will_replace)) "$PACE_SECS")"
         return 0
