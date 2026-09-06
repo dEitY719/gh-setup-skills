@@ -1,74 +1,51 @@
 # gh-setup:add-ai-metrics — Repo + host resolution
 
-Detailed procedure for Step 1's `TARGET_REPO` resolution — remote validation and
-owner/repo **plus host** extraction. `SKILL.md` keeps only the workflow; this
-file holds the substeps and error-message shape.
+Contract for `TARGET_REPO` / `TARGET_HOST` resolution -- remote validation,
+owner/repo **plus host** extraction, and the `--repo` override. Implemented as
+`resolve_repo` in [`lib/ai-metrics.sh`](../lib/ai-metrics.sh); this file says
+what it guarantees, not how, so there is one copy of the logic to keep correct.
 
-Vendored copy. The shared flow originates in `gh-issue:create`
-(`references/repo-resolution.md` there) and each skill owns a tailored copy —
-this plugin ships no cross-plugin dependency mechanism, so the file has to live
-here for a standalone `gh-setup` install to work. Keep the two in sync by hand
-when the shared flow changes.
+## Two paths
 
-## Substeps
+**`--repo <owner/repo>` given** -- `TARGET_REPO` is that value verbatim. The
+host is **not** inferred from `$REMOTE`'s URL: `--repo` may name a repo on a
+completely different host than this checkout's own remote, and borrowing that
+remote's host anyway is exactly how a `--repo` invocation used to land on the
+wrong GitHub server with no error. Host resolution instead prefers an
+already-exported `GH_HOST`, then the `_gh_resolve_host` setup-mode mapping,
+then `github.com`.
 
-1. `git rev-parse --show-toplevel` — confirm we're in a git repo.
+**No `--repo`** -- resolve both `TARGET_REPO` and `TARGET_HOST` from one and
+the same `$REMOTE` URL, never from two sources:
 
-2. Determine the target remote:
-   - If the user passed an argument, use it as remote name.
-   - Otherwise default to `origin`.
+```bash
+git remote get-url <remote-name>
+```
 
-3. Validate the remote and resolve owner/repo:
+If this fails, list available remotes (`git remote -v`) and stop with an
+error like:
 
-   ```bash
-   git remote get-url <remote-name>
-   ```
+```
+Error: remote '<remote-name>' not found. Available remotes:
+origin  https://github.com/user/repo.git (fetch)
+upstream  https://github.com/org/repo.git (fetch)
+```
 
-   If this fails, list available remotes (`git remote -v`) and stop with
-   an error like:
+`gh_host.sh`, when present (`${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh`),
+is the SSOT for host/URL mapping -- its `_gh_parse_owner_repo_url` /
+`_gh_host_from_url` do the parsing, with `_gh_resolve_host` (setup-mode →
+host) as the fallback when the URL itself doesn't resolve to a known host.
+Its absence (a standalone `gh-setup` install with no dotfiles checkout)
+degrades to a plain strip-scheme-and-split parse of the same URL, so the two
+values still come from the one string either way:
 
-   ```
-   Error: remote '<remote-name>' not found. Available remotes:
-   origin  https://github.com/user/repo.git (fetch)
-   upstream  https://github.com/org/repo.git (fetch)
-   ```
+- `https://github.com/<owner>/<repo>.git` → `github.com` + `<owner>/<repo>`
+- `git@github.samsungds.net:<owner>/<repo>.git` → `github.samsungds.net`
+  + `<owner>/<repo>`
 
-4. Extract `owner/repo` **and the host** from the remote URL returned in
-   step 3. Both come from that one URL — never from two sources:
-
-   ```bash
-   REMOTE_URL=$(git remote get-url <remote-name>) || exit 1
-   _SSOT="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
-   if [ -r "$_SSOT" ]; then
-       . "$_SSOT"
-       TARGET_REPO=$(_gh_parse_owner_repo_url "$REMOTE_URL") || exit 1
-       TARGET_HOST=$(_gh_host_from_url "$REMOTE_URL") || TARGET_HOST=$(_gh_resolve_host)
-   else
-       # Standalone install — no dotfiles checkout. Strip scheme, credentials
-       # and the `.git` suffix, then split on the first `:` or `/`.
-       _u=${REMOTE_URL%.git}; _u=${_u#*://}; _u=${_u#*@}
-       TARGET_HOST=${_u%%[:/]*}
-       TARGET_REPO=${_u#*[:/]}
-   fi
-   [ -n "$TARGET_HOST" ] && [ -n "$TARGET_REPO" ] || exit 1
-   export GH_HOST="$TARGET_HOST"
-   export TARGET_REPO TARGET_HOST
-   ```
-
-   - `https://github.com/<owner>/<repo>.git` → `github.com` + `<owner>/<repo>`
-   - `git@github.samsungds.net:<owner>/<repo>.git` → `github.samsungds.net`
-     + `<owner>/<repo>`
-
-   `gh_host.sh` 가 있으면 그것이 host/URL 매핑의 SSOT 다 — 정규식이나 도메인
-   목록을 여기에 복제하지 않는다. `_gh_resolve_host` (setup-mode → host) 는
-   파싱할 remote URL 이 없을 때만 쓰는 fallback 이다. `gh-setup` 을 dotfiles
-   없이 단독 설치한 환경에는 그 파일이 없으므로, 위의 `else` 분기가 같은 두
-   값을 remote URL 하나에서 직접 뽑는다 — 이 스킬은 Step 1 에서 `TARGET_REPO`
-   를 못 구하면 진행할 수 없기 때문에, 여기서 fallback 이 없으면 vendoring
-   자체가 무의미해진다.
-
-Store the results as `TARGET_REPO` and `TARGET_HOST` — every later step of this
-skill reads them.
+Both paths converge on the same guarantee: `TARGET_HOST` is never empty when
+`resolve_repo` returns (an empty `GH_HOST` is exactly the silent
+wrong-host state of dEitY719/dotfiles#1403), and both are exported for every later step.
 
 ## Host targeting rule (dEitY719/dotfiles#1403)
 
