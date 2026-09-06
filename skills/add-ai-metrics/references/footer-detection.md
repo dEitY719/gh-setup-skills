@@ -76,11 +76,13 @@ old bare form and the new wrapped form, enabling in-place upgrade.
 
 ## `--force` on a card without a footer
 
-`replace_footer` returns the original body unchanged when the regex does
-not match. Detect that and degrade to `append_footer`:
-
-`replace_footer` returns the original body unchanged when the regex does not
-match; `run()` detects that and degrades to `append_footer`.
+`run()` branches on `has_footer` before ever calling `replace_footer` --
+a footer-less card takes the `append_footer` path directly, `--force` or
+not, so `replace_footer` is only ever invoked when a footer is already
+present. (`replace_footer` returning the body unchanged on a non-match is
+still a real guard, exercised by `--self-test`'s "replace_footer no-match"
+case -- it just never triggers through `run()` today, since `has_footer`
+already screens that case out upstream.)
 
 This keeps `--force` semantically "ensure the footer reflects current
 metrics" even when the card never had one.

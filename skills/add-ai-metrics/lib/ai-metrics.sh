@@ -117,10 +117,12 @@ parse_date_arg() {
             ;;
         8) # YY-MM-DD
             [[ "$arg" =~ ^[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+            _valid_calendar_date "20$arg" || return 1
             printf 'single 20%s\n' "$arg"
             ;;
         10) # YYYY-MM-DD
             [[ "$arg" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+            _valid_calendar_date "$arg" || return 1
             printf 'single %s\n' "$arg"
             ;;
         *) return 1 ;;
@@ -166,14 +168,38 @@ _minus_one_day() {
 # Accepts 8-char YY-MM-DD (expanded) or 10-char YYYY-MM-DD (passthrough).
 # The two halves of a range are normalized independently.
 _expand_day() {
-    local d="$1"
+    local d="$1" expanded
     case "${#d}" in
         8)  [[ "$d" =~ ^[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]] || return 1
-            printf '20%s\n' "$d" ;;
+            expanded="20$d" ;;
         10) [[ "$d" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
-            printf '%s\n' "$d" ;;
+            expanded="$d" ;;
         *)  return 1 ;;
     esac
+    _valid_calendar_date "$expanded" || return 1
+    printf '%s\n' "$expanded"
+}
+
+# True (0) only when $1 (YYYY-MM-DD) is a real calendar date, not just
+# regex-shaped -- rejects e.g. 2024-02-30 (April has 30 days, February
+# never does). Regex alone lets that straight through to either a
+# confusing zero-results `created:` search clause, or into
+# _minus_one_day's date arithmetic, whose behavior on an invalid date is
+# not guaranteed the same across the GNU/BSD/python3 fallback chain --
+# some accept and silently roll it into the next month instead of
+# erroring. The round-trip compare below (`$out` = `$d`) is what catches
+# that silent-rollover case even on a tier that "succeeds": if the tier
+# normalized the date instead of rejecting it, the output no longer
+# matches the input and this falls through to the next, stricter tier.
+_valid_calendar_date() {
+    local d="$1" out
+    if out=$(date -d "$d" +%F 2>/dev/null) && [ "$out" = "$d" ]; then
+        return 0
+    fi
+    if out=$(date -j -f "%Y-%m-%d" "$d" +%F 2>/dev/null) && [ "$out" = "$d" ]; then
+        return 0
+    fi
+    python3 -c "import datetime,sys; datetime.date.fromisoformat(sys.argv[1])" "$d" >/dev/null 2>&1
 }
 
 # Usage: build_search_clause <kind> <a> [<b>]
@@ -609,8 +635,11 @@ run() {
             # slip through on top of the sleep's own overshoot before the
             # budget is ever re-read. This bounds the overshoot to at most
             # one --pace interval -- the sleep in flight is not interrupted
-            # mid-way, only the work that would follow it.
-            if [ "$DRY_RUN" != true ] && check_budget "$(( $(date +%s) - START_TS ))" "$BUDGET_SECS"; then
+            # mid-way, only the work that would follow it. No `--dry-run`
+            # guard needed here: every dry-run branch above `continue`s
+            # before pending_sleep is ever set to true, so this can't run
+            # in dry-run mode in the first place.
+            if check_budget "$(( $(date +%s) - START_TS ))" "$BUDGET_SECS"; then
                 stop_reason="--budget ($(format_duration "$BUDGET_SECS"))"
                 break
             fi
@@ -720,6 +749,18 @@ self_test() {
     _ok 'parse_date_arg single'  "$(parse_date_arg 26-04-30)"           'single 2026-04-30'
     _ok 'parse_date_arg bad'     "$(parse_date_arg 26-4 || echo rejected)"         'rejected'
     _ok 'parse_date_arg openend' "$(parse_date_arg 2026-04-03.. || echo rejected)" 'rejected'
+    _ok 'parse_date_arg feb30 single (regression: regex-shaped is not calendar-valid)' \
+        "$(parse_date_arg 2024-02-30 || echo rejected)" 'rejected'
+    _ok 'parse_date_arg feb30 range-start' \
+        "$(parse_date_arg 2024-02-30..2024-03-05 || echo rejected)" 'rejected'
+    _ok 'parse_date_arg feb30 range-end' \
+        "$(parse_date_arg 2024-02-25..2024-02-30 || echo rejected)" 'rejected'
+    _ok 'parse_date_arg apr31 (30-day month)' \
+        "$(parse_date_arg 2024-04-31 || echo rejected)" 'rejected'
+    _ok 'parse_date_arg feb29 leap year (real date, must pass)' \
+        "$(parse_date_arg 2024-02-29)" 'single 2024-02-29'
+    _ok 'parse_date_arg feb29 non-leap year (regression)' \
+        "$(parse_date_arg 2026-02-29 || echo rejected)" 'rejected'
 
     _ok 'build_search_clause day'   "$(build_search_clause single 2026-04-30)"           'created:2026-04-30'
     _ok 'build_search_clause month' "$(build_search_clause month 2026-04-01 2026-04-30)" 'created:2026-04-01..2026-04-30'
