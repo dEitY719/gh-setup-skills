@@ -75,7 +75,7 @@ On non-zero exit → abort (do not proceed to Step 6). Quote the script's stderr
 bash "${SKILL_DIR}/lib/setup.sh" <user-flags>
 ```
 
-On non-zero exit, or a stdout `[FAIL] ...` line, abort — quote it. A stdout `[OK] ...` line signals success,
+On non-zero exit, abort and quote the stderr `[FAIL] ...` line. A stdout `[OK] ...` line signals success,
 whether a fresh setup or an idempotent `already exists` re-run; extract the Project URL and number from the
 report that follows it.
 

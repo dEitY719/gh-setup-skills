@@ -68,7 +68,6 @@ non-Claude-Code contexts:
 
 ## Related
 
-- SSOT: `docs/.ssot/github-project-board.md` (a `dEitY719/dotfiles`-internal document — not shipped with this plugin)
+- SSOT and Playbook (`docs/.ssot/github-project-board.md`, `docs/guide/playbooks/kanban-board-setup.md`) are `dEitY719/dotfiles`-internal documents — not shipped with this plugin
 - Label SSOT: `../label-bootstrap/references/gh-labels.md` (delegated to `gh-setup:label-bootstrap`)
-- Playbook: `docs/guide/playbooks/kanban-board-setup.md` (a `dEitY719/dotfiles`-internal document — not shipped with this plugin)
 - Decision: dEitY719/dotfiles#289 (3-stage issue lifecycle, workflow #3 disabled)

@@ -7,12 +7,13 @@ the smoke-test command block (host-corrected; do not execute unless
 
 ```
 [OK] Kanban board ready — <OWNER>/<REPO>
-  Board:          <PROJECT_URL>
-  Project number: <PROJECT_NUMBER>
-  Labels:         <n> created, <m> synced, <k> skipped
-  Elapsed:        <mm>m<ss>s
+  Labels:  <n> created, <m> synced, <k> skipped
+  Elapsed: <mm>m<ss>s
 Next: apply the UI workflow settings above, then run the smoke test.
 ```
+
+Board URL and project number are already in `print_final_report`'s own
+"Project" section moments earlier — do not repeat them here.
 
 `Elapsed` is `$(date +%s) - START_TS` (Step 1), formatted `<mm>m<ss>s`. Omit
 the `Labels:` line entirely when `--no-bootstrap-labels` was passed. On the
