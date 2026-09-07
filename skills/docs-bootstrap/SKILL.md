@@ -49,8 +49,8 @@ script parses them itself.
 bash "${SKILL_DIR}/lib/scaffold.sh" <path> [--check|--apply|--dry-run] [--force]
 ```
 
-On non-zero exit, stop and quote the script's first stderr line — do not
-retry and do not fall back to `--dry-run`.
+On non-zero exit, stop and quote the script's last `[FAIL]`/`[WARN]` line —
+do not retry and do not fall back to `--dry-run`.
 
 The script is idempotent: existing paths are skipped with a `skip` line.
 
@@ -63,13 +63,7 @@ for example:
 [INFO] Scaffolding /path/to/repo/docs/ (kind-split layout)
   skip   adr/.gitkeep (exists)
   create product/.gitkeep
-  create design/.gitkeep
-  create architecture/system/.gitkeep
-  create architecture/features/.gitkeep
-  create testing/.gitkeep
-  create guides/.gitkeep
-  create public/.gitkeep
-  create README.md
+  ... (one line per leaf dir + README, per the script's actual output)
 [OK] docs/ scaffolded. Empty folders are tracked via .gitkeep.
 Next: git add docs/ && git commit -m "docs: scaffold kind-split docs tree"
 ```
