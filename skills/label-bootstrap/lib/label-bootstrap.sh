@@ -196,6 +196,9 @@ main() {
     local effective="$existing"
     local renamed_targets="" # new names that were renamed this run
 
+    # Counters for the closing Summary/verdict line.
+    local n_renamed=0 n_created=0 n_synced=0 n_pruned=0 n_failed=0
+
     # --- 1. Alias renames --------------------------------------------------
     local old new color desc
     while IFS='|' read -r old new; do
@@ -213,6 +216,9 @@ main() {
                 effective="$(printf '%s\n' "$effective" | grep -Fxv "$old" || true)"
                 in_set "$new" "$effective" || effective="$(printf '%s\n%s' "$effective" "$new")"
                 renamed_targets="${renamed_targets}${new}"$'\n'
+                n_renamed=$((n_renamed + 1))
+            else
+                n_failed=$((n_failed + 1))
             fi
         fi
     done <<<"$alias_feed"
@@ -225,40 +231,62 @@ main() {
             continue # already synced by the rename above
         fi
         if in_set "$name" "$effective"; then
-            api_mutate "PATCH label '${name}' (color=${color})" \
+            if api_mutate "PATCH label '${name}' (color=${color})" \
                 "repos/${REPO}/labels/${name}" -X PATCH \
-                -f "new_name=${name}" -f "color=${color}" -f "description=${desc}" || true
+                -f "new_name=${name}" -f "color=${color}" -f "description=${desc}"; then
+                n_synced=$((n_synced + 1))
+            else
+                n_failed=$((n_failed + 1))
+            fi
         else
-            api_mutate "POST label '${name}' (color=${color})" \
+            if api_mutate "POST label '${name}' (color=${color})" \
                 "repos/${REPO}/labels" -X POST \
-                -f "name=${name}" -f "color=${color}" -f "description=${desc}" || true
+                -f "name=${name}" -f "color=${color}" -f "description=${desc}"; then
+                n_created=$((n_created + 1))
+            else
+                n_failed=$((n_failed + 1))
+            fi
             effective="$(printf '%s\n%s' "$effective" "$name")"
         fi
     done <<<"$feed"
 
     # --- 3. Prune (opt-in only) -------------------------------------------
-    if ! $PRUNE; then
+    if $PRUNE; then
+        # keep = SSOT names (pipeline labels included — they were merged into
+        #        `feed` above, so `ssot_names` already carries them) ∪ alias
+        #        new names ∪ allowlist
+        local keep alias_targets allow_nl
+        alias_targets="$(printf '%s\n' "$alias_feed" | cut -d'|' -f2)"
+        allow_nl="$ALLOWLIST"
+        keep="$(printf '%s\n%s\n%s\n' "$ssot_names" "$alias_targets" "$allow_nl" | grep -v '^$' | sort -u)"
+
+        local label
+        while IFS= read -r label; do
+            [ -z "$label" ] && continue
+            if in_set "$label" "$keep"; then
+                continue
+            fi
+            if api_mutate "DELETE label '${label}' (prune: not in SSOT/alias/allowlist)" \
+                "repos/${REPO}/labels/${label}" -X DELETE; then
+                n_pruned=$((n_pruned + 1))
+            else
+                n_failed=$((n_failed + 1))
+            fi
+        done <<<"$effective"
+    else
         printf 'Prune skipped (--prune not set) — no labels deleted.\n'
-        return 0
     fi
 
-    # keep = SSOT names (pipeline labels included — they were merged into
-    #        `feed` above, so `ssot_names` already carries them) ∪ alias new
-    #        names ∪ allowlist
-    local keep alias_targets allow_nl
-    alias_targets="$(printf '%s\n' "$alias_feed" | cut -d'|' -f2)"
-    allow_nl="$ALLOWLIST"
-    keep="$(printf '%s\n%s\n%s\n' "$ssot_names" "$alias_targets" "$allow_nl" | grep -v '^$' | sort -u)"
-
-    local label
-    while IFS= read -r label; do
-        [ -z "$label" ] && continue
-        if in_set "$label" "$keep"; then
-            continue
-        fi
-        api_mutate "DELETE label '${label}' (prune: not in SSOT/alias/allowlist)" \
-            "repos/${REPO}/labels/${label}" -X DELETE || true
-    done <<<"$effective"
+    # --- Verdict -----------------------------------------------------------
+    # A run where every mutation failed (e.g. a read-only token) must not
+    # look identical, on stdout, to a fully successful one.
+    printf 'Summary: renamed=%d created=%d synced=%d pruned=%d failed=%d\n' \
+        "$n_renamed" "$n_created" "$n_synced" "$n_pruned" "$n_failed"
+    if [ "$n_failed" -gt 0 ]; then
+        printf '[FAIL] Label sync incomplete for %s%s (%d failure(s))\n' "$REPO" "$mode" "$n_failed"
+        exit 1
+    fi
+    printf '[OK] Labels synced to SSOT for %s%s\n' "$REPO" "$mode"
 }
 
 main "$@"
