@@ -45,7 +45,9 @@ bash "${SKILL_DIR}/lib/label-bootstrap.sh" --dry-run <user-flags>
 
 Print the plan (rename / PATCH / POST / prune candidates). On non-zero
 exit → abort (quote the script's first stderr line). Never proceed to the
-real run if the dry-run failed.
+real run if the dry-run failed. Ends with a `Summary:` line and an
+`[OK]`/`[FAIL]` verdict (see Step 4 for the shape) — a dry-run always
+verdicts `[OK]` since it never mutates.
 
 ## Step 4: Real Run
 
@@ -54,27 +56,27 @@ bash "${SKILL_DIR}/lib/label-bootstrap.sh" <user-flags>
 ```
 
 Surface each applied action. Per-label API failures warn on stderr and
-continue — a single label's failure never aborts the run.
+continue — a single label's failure never aborts the run, but each one
+counts toward `failed=` in the closing summary, which verdicts `[FAIL]`
+(non-zero exit) whenever `failed > 0`:
 
-## Behavior notes
+```
+Target repo: dEitY719/example
+rename label 'bug' -> 'fix' (sync color/desc)
+POST label 'skill' (color=d97757)
+Prune skipped (--prune not set) — no labels deleted.
+Summary: renamed=1 created=1 synced=8 pruned=0 failed=0
+[OK] Labels synced to SSOT for dEitY719/example
+```
 
-- **Force-sync, no skip mode**: every existing SSOT label is PATCHed to
-  the canonical color/description unconditionally. This is an intentional
-  change from the old `gh-setup:kanban-bootstrap` inline logic (which skipped
-  existing labels unless `--force-label-sync`); see F-3 of issue dEitY719/dotfiles#1226.
-- **3 alias renames preserve links**: `bug`->`fix`,
-  `documentation`->`docs`, `build`->`chore` are renamed via
-  `PATCH new_name=`, never delete+recreate, so issues/PRs keep the label.
-- **`--prune` is opt-in**: without it, no label is ever deleted. With it,
-  only labels outside (SSOT ∪ pipeline ∪ alias-targets ∪ allowlist) are
-  deleted, computed AFTER renames (NF-1 in dEitY719/dotfiles#1226).
-- **2 pipeline-state labels** (`review-blocked` / `review-passed`, dEitY719/dotfiles#1564)
-  come from a separate `pipeline|name|color|description` feed in the same
-  SSOT file. They are provisioned like the base 10 and preserved by
-  `--prune`, but stay out of the 10-label set: they are pipeline state, not
-  issue classification, and have no aliases. Without them
-  `gh-verify:review-all` cannot issue a verdict and `gh-pr:merge-train` skips
-  every PR.
+End with a `Next:` line: after a dry-run, `Next: re-run without --dry-run
+to apply.`; after a real run, `Next: gh label list --repo <owner/repo>` to
+verify, or `/gh-setup:kanban-bootstrap` to set up the board.
+
+Force-sync semantics (every existing SSOT label is PATCHed unconditionally,
+no skip mode), the 3 alias renames, the `--prune` set algebra, and the 2
+pipeline-state labels are documented in `references/help.md`; the label
+feed itself is `references/gh-labels.md`.
 
 ## Constraints
 
