@@ -62,7 +62,7 @@ bash "${SKILL_DIR}/../label-bootstrap/lib/label-bootstrap.sh" \
 
 Pass `--dry-run` through on the dry-run dispatch (Step 6).
 `--no-bootstrap-labels` skips this step with a one-line notice. Per-label
-permission errors warn on stderr and continue (never blocks board setup).
+permission errors warn on stderr and continue — proceed to Step 6 regardless of this step's exit code (non-zero when any label failed, dEitY719/gh-setup-skills#4); it never blocks board setup.
 
 ## Step 6: Dry-run Dispatch
 
