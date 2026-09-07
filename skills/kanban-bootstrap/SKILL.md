@@ -24,32 +24,29 @@ metadata:
 If arg #1 is `-h`, `--help`, or `help`, read `references/help.md` and output its content verbatim, then stop.
 No API calls.
 
-## Step 1: Resolve Skill Dir
+## Step 1: Setup
 
-Record `START_TS=$(date +%s)` immediately. Locate `SKILL_DIR` (this file's directory): the script lives at
-`${SKILL_DIR}/lib/setup.sh`.
+Record `START_TS=$(date +%s)`. Locate `SKILL_DIR` (this file's directory) — the script lives at
+`${SKILL_DIR}/lib/setup.sh`. Follow `references/prereq.md` to resolve `$HOST` from `origin`'s URL (needed
+by Step 2); on a not-in-a-git-repo miss it aborts (rc=1). Tool availability and token project-scope are
+`lib/setup.sh`'s own job, not duplicated here — Step 5's dry-run dispatch surfaces either via stderr + rc=1.
 
-## Step 2: Prereq Check
-
-Follow `references/prereq.md` for tool / host / token-scope checks — it also resolves `$HOST` from `origin`'s
-URL. On any miss the helper prints the install or `gh auth refresh -h <host> -s project` hint and aborts (rc=1).
-
-## Step 3: Target Repo
+## Step 2: Target Repo
 
 Always `origin` (never prompt for remote selection). Detect `OWNER/REPO` via
-`GH_HOST="$HOST" gh repo view --json nameWithOwner`; explicit `--owner`/`--repo` override. `$HOST` is Step 2's
+`GH_HOST="$HOST" gh repo view --json nameWithOwner`; explicit `--owner`/`--repo` override. `$HOST` is Step 1's
 `_kanban_host` value — every `gh` call carries it (`GH_HOST="$HOST"`, or `--hostname "$HOST"` for `gh api`),
 since `--repo` alone names no server (dEitY719/dotfiles#1403 / dEitY719/dotfiles#1407).
 
-## Step 4: Options
+## Step 3: Options
 
 If `--hide-columns` was not passed and this looks like a personal repo,
 ask the user once (1-line question) — never auto-infer from collaborator
-count (NF-3 / privacy). Parse `--no-bootstrap-labels` (skip Step 5).
+count (NF-3 / privacy). Parse `--no-bootstrap-labels` (skip Step 4).
 `--force-label-sync` is a back-compat **no-op**, accepted silently (F-3 of
 issue dEitY719/dotfiles#1226 — flags and their defaults: `references/help.md`).
 
-## Step 5: Label Bootstrap
+## Step 4: Label Bootstrap
 
 Delegate to the sibling `gh-setup:label-bootstrap` skill (SSOT:
 `../label-bootstrap/references/gh-labels.md`) — it force-syncs the 10
@@ -60,32 +57,34 @@ bash "${SKILL_DIR}/../label-bootstrap/lib/label-bootstrap.sh" \
     --repo "$OWNER/$REPO"
 ```
 
-Pass `--dry-run` through on the dry-run dispatch (Step 6).
+Pass `--dry-run` through on the dry-run dispatch (Step 5).
 `--no-bootstrap-labels` skips this step with a one-line notice. Per-label
 permission errors warn on stderr and continue (never blocks board setup).
 
-## Step 6: Dry-run Dispatch
+## Step 5: Dry-run Dispatch
 
 ```
 bash "${SKILL_DIR}/lib/setup.sh" --dry-run <user-flags>
 ```
 
-On non-zero exit → abort (do not proceed to Step 7). Quote the script's stderr first line.
+On non-zero exit → abort (do not proceed to Step 6). Quote the script's stderr first line.
 
-## Step 7: Real Run
+## Step 6: Real Run
 
 ```
 bash "${SKILL_DIR}/lib/setup.sh" <user-flags>
 ```
 
-Parse stdout for `Project board setup finished` (success) or `A project titled '<TITLE>' already exists`
-(idempotent re-run). Extract the Project URL and number.
+On non-zero exit, or a stdout `[FAIL] ...` line, abort — quote it. A stdout `[OK] ...` line signals success,
+whether a fresh setup or an idempotent `already exists` re-run; extract the Project URL and number from the
+report that follows it.
 
-## Step 8: UI Checklist + Report
+## Step 7: UI Checklist + Report
 
 The script's `print_final_report` already emits host-aware URLs (post-dEitY719/dotfiles#699 fix) and the workflow #3 `DISABLE`
 instruction — pass it through, then append the smoke-test block and compact closing report per
-`references/report-template.md`.
+`references/report-template.md`. If the user asks why workflow #3 is disabled, read
+`references/ui-checklist.md` for the rationale (not reproduced in the script's one-line instruction).
 
 ## Constraints
 
@@ -97,4 +96,4 @@ instruction — pass it through, then append the smoke-test block and compact cl
 
 ## Related Skills
 
-`gh-setup:label-bootstrap` (label SSOT sync only — delegated in Step 5) · `gh-setup:docs-bootstrap` (docs/ tree) — same new-repo setup slot.
+`gh-setup:label-bootstrap` (label SSOT sync only — delegated in Step 4) · `gh-setup:docs-bootstrap` (docs/ tree) — same new-repo setup slot.
