@@ -89,6 +89,8 @@ feed itself is `references/gh-labels.md`.
 - `lib/label-bootstrap.sh` is the sole entry point; invoke it directly
   from non-Claude contexts:
   `bash skills/label-bootstrap/lib/label-bootstrap.sh [...]`.
+- After changing the Summary/verdict logic, run
+  `bash tests/verdict.sh` (fakes `gh`, makes no real API calls).
 
 ## Related Skills
 
