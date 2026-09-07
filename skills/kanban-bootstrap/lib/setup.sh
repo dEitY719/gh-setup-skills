@@ -95,9 +95,16 @@ log_warning() { ux_warning "$1"; }
 log_error() { ux_error "$1"; }
 log_step() { ux_step "$1" "$2"; }
 
+# Machine-parseable markers for the calling SKILL.md flow — kept as two
+# one-line functions (not folded into log_success/log_error) since only
+# these terminal exit points get marked, not every log_success/log_warning
+# call in the file.
+mark_ok() { printf '[OK] %s\n' "$1"; }
+mark_fail() { printf '[FAIL] %s\n' "$1" >&2; }
+
 die() {
     log_error "$1"
-    printf '[FAIL] %s\n' "$1" >&2
+    mark_fail "$1"
     exit 1
 }
 
@@ -633,7 +640,7 @@ print_final_report() {
 
     ux_header "Kanban Board Ready"
     log_success "Project board setup finished for ${OWNER}/${REPO}"
-    printf '[OK] Project board setup finished for %s/%s\n' "${OWNER}" "${REPO}"
+    mark_ok "Project board setup finished for ${OWNER}/${REPO}"
     ux_section "Project"
     ux_bullet "Board: ${PROJECT_URL}"
     ux_bullet "Workflows: ${WORKFLOWS_URL}"
@@ -693,7 +700,7 @@ main() {
     if find_existing_project; then
         PROJECT_URL="${PROJECT_URL:-$(project_url_from_owner_type)}"
         log_warning "A project titled '${TITLE}' already exists (#${PROJECT_NUMBER}). Delete it first if you need a fresh install."
-        printf '[OK] Project board already exists for %s/%s (idempotent)\n' "${OWNER}" "${REPO}"
+        mark_ok "Project board already exists for ${OWNER}/${REPO} (idempotent)"
         ux_section "Existing Project"
         ux_bullet "Board: ${PROJECT_URL}"
         ux_bullet "Workflows: $(workflows_url_from_owner_type)"
