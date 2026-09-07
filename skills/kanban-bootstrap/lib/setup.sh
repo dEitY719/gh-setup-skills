@@ -97,6 +97,7 @@ log_step() { ux_step "$1" "$2"; }
 
 die() {
     log_error "$1"
+    printf '[FAIL] %s\n' "$1" >&2
     exit 1
 }
 
@@ -632,6 +633,7 @@ print_final_report() {
 
     ux_header "Kanban Board Ready"
     log_success "Project board setup finished for ${OWNER}/${REPO}"
+    printf '[OK] Project board setup finished for %s/%s\n' "${OWNER}" "${REPO}"
     ux_section "Project"
     ux_bullet "Board: ${PROJECT_URL}"
     ux_bullet "Workflows: ${WORKFLOWS_URL}"
@@ -660,8 +662,8 @@ print_final_report() {
     fi
 
     ux_section "Smoke Test"
-    # Printed verbatim for the user to paste, and mirrored in
-    # references/ui-checklist.md — keep both host-pinned and identical.
+    # Printed verbatim for the user to paste — this is the single copy
+    # (references/ui-checklist.md no longer reproduces it).
     # `--repo` names a repo but no host, so without the prefix this write
     # follows `gh repo set-default` to whichever server that points at
     # (dEitY719/dotfiles#1403/dEitY719/dotfiles#1407). This runs after detect_host, so HOST is resolved.
@@ -691,6 +693,7 @@ main() {
     if find_existing_project; then
         PROJECT_URL="${PROJECT_URL:-$(project_url_from_owner_type)}"
         log_warning "A project titled '${TITLE}' already exists (#${PROJECT_NUMBER}). Delete it first if you need a fresh install."
+        printf '[OK] Project board already exists for %s/%s (idempotent)\n' "${OWNER}" "${REPO}"
         ux_section "Existing Project"
         ux_bullet "Board: ${PROJECT_URL}"
         ux_bullet "Workflows: $(workflows_url_from_owner_type)"

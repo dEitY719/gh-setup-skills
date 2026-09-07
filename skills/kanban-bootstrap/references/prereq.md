@@ -1,18 +1,5 @@
 # Prereq Check — F-2 Procedure
 
-## Tools
-
-```sh
-command -v gh >/dev/null 2>&1 || {
-    printf 'gh CLI not found — install from https://cli.github.com\n' >&2
-    return 1
-}
-command -v jq >/dev/null 2>&1 || {
-    printf 'jq not found — apt/brew install jq\n' >&2
-    return 1
-}
-```
-
 ## Host detection
 
 ```sh
@@ -26,47 +13,31 @@ _kanban_host() {
         *) return 1 ;;
     esac
 }
-```
 
-Uses shell parameter expansion instead of `cut` (no subprocess fork),
-and strips the optional port from `ssh://user@host:2222/...` URLs.
-
-## Token scope check
-
-```sh
 HOST=$(_kanban_host) || {
     printf 'not in a git repository (or origin is unparseable)\n' >&2
     return 1
 }
-
-scopes=$(gh api --hostname "$HOST" -i user 2>/dev/null \
-    | awk 'tolower($1) == "x-oauth-scopes:" { sub(/^[^:]*:[ \t]*/, ""); print; exit }')
-
-case ",${scopes// /}," in
-    *,project,*|*,read:project,*) : ;;
-    *)
-        printf 'token missing project scope — run: gh auth refresh -h %s -s project\n' "$HOST" >&2
-        return 1
-        ;;
-esac
 ```
 
-## Flag naming inconsistency (`gh api` vs `gh auth refresh`)
+Uses shell parameter expansion instead of `cut` (no subprocess fork), and
+strips the optional port from `ssh://user@host:2222/...` URLs. `$HOST` feeds
+Step 2's `gh repo view` call (and Step 7's smoke-test command).
 
-`gh api` uses `--hostname` for the target host — `-h` is reserved as
-its help flag. `gh auth refresh`, however, keeps `-h` as its hostname
-short flag. The two CLIs are intentionally inconsistent; both forms
-above are correct as written. Do not "fix" one to match the other.
+## Tool / token-scope checks are not duplicated here
+
+`lib/setup.sh` already checks for `gh`/`jq` and the token's `project` scope at
+the top of its own `main()` (`require_command`, `require_project_scope`) — a
+miss there aborts with rc=1 and a stderr hint, which Step 5's dry-run dispatch
+surfaces before any mutation runs. A second copy of that check lived here
+until it drifted from the script's own version (different `--hostname` usage,
+different refresh-hint text for two failure paths). Removing it makes
+`lib/setup.sh` the single owner; this file only resolves `$HOST`, which the
+script cannot supply back to the SKILL-level flow that needs it before Step 2.
 
 ## rc matrix
 
 | condition | rc | message |
 |-----------|----|---------|
-| gh missing | 1 | `gh CLI not found — install from https://cli.github.com` |
-| jq missing | 1 | `jq not found — apt/brew install jq` |
-| not in git | 1 | `not in a git repository (or origin is unparseable)` |
-| project scope missing | 1 | `token missing project scope — run: gh auth refresh -h <host> -s project` |
+| not in a git repo (or origin unparseable) | 1 | `not in a git repository (or origin is unparseable)` |
 | all good | 0 | (silent) |
-
-Step 5 (label bootstrap) reuses the result of this check — `repo`
-scope is implied by `project` scope, so no extra check.
