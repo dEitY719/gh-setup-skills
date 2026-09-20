@@ -27,9 +27,9 @@ No API calls.
 ## Step 1: Setup
 
 Record `START_TS=$(date +%s)`. Locate `SKILL_DIR` (this file's directory) — the script lives at
-`${SKILL_DIR}/lib/setup.sh`. Follow `references/prereq.md` to resolve `$HOST` from `origin`'s URL (needed
-by Step 2); on a not-in-a-git-repo miss it aborts (rc=1). Tool availability and token project-scope are
-`lib/setup.sh`'s own job, not duplicated here — Step 5's dry-run dispatch surfaces either via stderr + rc=1.
+`${SKILL_DIR}/lib/setup.sh`. Follow `references/prereq.md` to resolve `$HOST` (needed by Step 2); with no parseable
+`origin` it falls back to `github.com` rather than aborting, so `--owner`/`--repo` work outside a checkout (dEitY719/gh-setup-skills#10).
+Tool availability and token project-scope are `lib/setup.sh`'s own job, not duplicated here — Step 5's dry-run dispatch surfaces either via stderr + rc=1.
 
 ## Step 2: Target Repo
 
