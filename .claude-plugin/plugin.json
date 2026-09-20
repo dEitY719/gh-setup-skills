@@ -1,7 +1,7 @@
 {
   "name": "gh-setup",
   "description": "Stand up a new GitHub repo in one pass: sync its labels to the 10-label SSOT, create and wire the Projects v2 kanban board, scaffold the standard docs/ tree, and backfill the ai-metrics footer onto cards that predate automatic capture",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "dEitY719",
     "url": "https://github.com/dEitY719"
