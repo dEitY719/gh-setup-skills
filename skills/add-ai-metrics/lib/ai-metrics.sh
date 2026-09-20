@@ -378,7 +378,17 @@ estimate_elapsed() {
 # A missing remote is fatal: silently falling back to `origin` would rewrite
 # card bodies in the wrong repo (dEitY719/dotfiles#1403).
 resolve_repo() {
-    local url="" ssot u
+    local url="" sc ssot u
+
+    # gh_host.sh resolves its OWN sibling dotfiles_root.sh through
+    # ${SHELL_COMMON:-$HOME/dotfiles/shell-common} at source time, so
+    # SHELL_COMMON has to be set before the `.` below, not after
+    # (dEitY719/harness-skills#37). Unset, it looks under $HOME/dotfiles even
+    # when DOTFILES_ROOT points elsewhere, misses, and prints
+    # "#1454 guard skipped (#724)" while silently dropping that guard.
+    # Bound once here because both branches compose the same path.
+    sc="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common"
+    ssot="$sc/functions/gh_host.sh"
 
     if [ -n "$REPO" ]; then
         # --repo names the target explicitly and may point at a repo on a
@@ -394,8 +404,11 @@ resolve_repo() {
         if [ -n "${GH_HOST:-}" ]; then
             TARGET_HOST="$GH_HOST"
         else
-            ssot="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
             if [ -r "$ssot" ]; then
+                # Export before the source: see the note at the top of this
+                # function. Inside the -r branch, so a tree that is not there
+                # is never exported.
+                export SHELL_COMMON="$sc"
                 # shellcheck source=/dev/null
                 . "$ssot"
                 TARGET_HOST=$(_gh_resolve_host 2>/dev/null || true)
@@ -409,9 +422,10 @@ resolve_repo() {
 $(git remote -v)"
 
         TARGET_HOST=""
-        ssot="${DOTFILES_ROOT:-$HOME/dotfiles}/shell-common/functions/gh_host.sh"
         if [ -r "$ssot" ]; then
             # gh_host.sh is the SSOT for host/URL mapping when dotfiles is present.
+            # Export before the source: see the note at the top of this function.
+            export SHELL_COMMON="$sc"
             # shellcheck source=/dev/null
             . "$ssot"
             TARGET_REPO=$(_gh_parse_owner_repo_url "$url" 2>/dev/null || true)
