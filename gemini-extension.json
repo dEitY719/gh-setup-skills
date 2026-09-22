@@ -1,6 +1,6 @@
 {
   "name": "gh-setup",
   "description": "One-time GitHub repo initialization — labels, Projects v2 kanban board, docs tree, ai-metrics backfill",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "contextFileName": "GEMINI.md"
 }
