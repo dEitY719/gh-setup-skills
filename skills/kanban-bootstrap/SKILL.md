@@ -49,12 +49,11 @@ issue dEitY719/dotfiles#1226 — flags and their defaults: `references/help.md`)
 ## Step 4: Label Bootstrap
 
 Delegate by skill name — invoke the `gh-setup:label-bootstrap` skill with
-`--repo $OWNER/$REPO` through your harness's "Invoke a skill" mapping
-(Claude Code `Skill`, Gemini CLI `activate_skill`, OpenCode `skill`, Hermes
-`skill_view`, Codex `read_file` its `SKILL.md`; full table:
-`dEitY719/harness-skills` `references/*-tools.md`) — never by a `../` path:
+`--repo $OWNER/$REPO` through your harness's "Invoke a skill" row
+(`dEitY719/harness-skills` `references/*-tools.md`) — never by a `../` path:
 a harness that installs one skill directory has no sibling tree to reach
-into (dEitY719/gh-setup-skills#20). It force-syncs the 10 SSOT labels'
+into (dEitY719/gh-setup-skills#20). Not installed → one-line warning naming
+it, then continue to Step 5. It force-syncs the 10 SSOT labels'
 color/description and renames the 3 alias labels (SSOT: that skill's
 `references/gh-labels.md`).
 
