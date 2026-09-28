@@ -45,7 +45,7 @@ label bootstrap, and host-aware UI checklist.
 3. Delegates label bootstrap to `gh-setup:label-bootstrap`, which force-syncs
    the 10 SSOT labels (`feat`, `fix`, `docs`, `refactor`, `test`, `ci`,
    `chore`, `skill`, `TODO`, `reference`) per
-   `../label-bootstrap/references/gh-labels.md`
+   `gh-setup:label-bootstrap`'s `references/gh-labels.md`
    and renames the 3 alias labels (`bug`->`fix`, `documentation`->`docs`,
    `build`->`chore`) — idempotent.
 4. Dry-runs `lib/setup.sh`. Aborts if dry-run fails.
@@ -69,5 +69,5 @@ non-Claude-Code contexts:
 ## Related
 
 - SSOT and Playbook (`docs/.ssot/github-project-board.md`, `docs/guide/playbooks/kanban-board-setup.md`) are `dEitY719/dotfiles`-internal documents — not shipped with this plugin
-- Label SSOT: `../label-bootstrap/references/gh-labels.md` (delegated to `gh-setup:label-bootstrap`)
+- Label SSOT: `gh-setup:label-bootstrap`'s `references/gh-labels.md` (delegated to `gh-setup:label-bootstrap`)
 - Decision: dEitY719/dotfiles#289 (3-stage issue lifecycle, workflow #3 disabled)
