@@ -5,7 +5,7 @@ description: >-
   for /gh-setup:kanban-bootstrap, "kanban 보드 셋업",
   "프로젝트 보드 자동화 셋업", "set up the kanban board". Board setup — pure
   label sync is gh-setup:label-bootstrap.
-allowed-tools: Bash, Read, Grep
+allowed-tools: Bash, Read, Grep, Skill
 license: MIT
 compatibility:
   network: required
@@ -48,14 +48,13 @@ issue dEitY719/dotfiles#1226 — flags and their defaults: `references/help.md`)
 
 ## Step 4: Label Bootstrap
 
-Delegate to the sibling `gh-setup:label-bootstrap` skill (SSOT: that
-skill's `references/gh-labels.md`) — it force-syncs the 10
-SSOT labels' color/description and renames the 3 alias labels:
-
-```
-bash "${SKILL_DIR}/../label-bootstrap/lib/label-bootstrap.sh" \
-    --repo "$OWNER/$REPO"
-```
+Delegate by skill name — invoke the `gh-setup:label-bootstrap` skill
+(Claude Code: `Skill(gh-setup:label-bootstrap, "--repo $OWNER/$REPO")`;
+other harnesses: run that skill the same way) — never by path: a harness
+that installs one skill directory has no sibling tree to reach into
+(dEitY719/gh-setup-skills#20). It force-syncs the 10 SSOT labels'
+color/description and renames the 3 alias labels (SSOT: that skill's
+`references/gh-labels.md`).
 
 Pass `--dry-run` through on the dry-run dispatch (Step 5).
 `--no-bootstrap-labels` skips this step with a one-line notice. Per-label
