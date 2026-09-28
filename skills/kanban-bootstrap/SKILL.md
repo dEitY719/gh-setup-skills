@@ -48,8 +48,8 @@ issue dEitY719/dotfiles#1226 — flags and their defaults: `references/help.md`)
 
 ## Step 4: Label Bootstrap
 
-Delegate to the sibling `gh-setup:label-bootstrap` skill (SSOT:
-`../label-bootstrap/references/gh-labels.md`) — it force-syncs the 10
+Delegate to the sibling `gh-setup:label-bootstrap` skill (SSOT: that
+skill's `references/gh-labels.md`) — it force-syncs the 10
 SSOT labels' color/description and renames the 3 alias labels:
 
 ```
