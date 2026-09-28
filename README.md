@@ -20,9 +20,9 @@ this repo owns no shared assets — it links out for the
 | `docs-bootstrap` | `/gh-setup:docs-bootstrap [path] [--check\|--apply\|--dry-run] [--force]` | Scaffolds the 8-leaf kind-split `docs/` tree (`adr`, `product`, `design`, `architecture/{system,features}`, `testing`, `guides`, `public`), a `.gitkeep` per leaf, and one policy `docs/README.md`. Dry-run by default. |
 | `add-ai-metrics` | `/gh-setup:add-ai-metrics [<targets>] [--type issue\|PR] [--date <d>] [--pace] [--limit] [--budget] [--dry-run]` | Retrofits the `tokens · human-h · ai-min` footer onto Issues/PRs created before capture was automatic. Idempotent — a card that already has the block is skipped, and bytes outside it are never touched. |
 
-`kanban-bootstrap` and `label-bootstrap` are a pair: the board skill runs the
-label skill's `lib/label-bootstrap.sh` in Step 5 rather than carrying its own
-inline label logic, so there is one label SSOT and one force-sync policy.
+`kanban-bootstrap` and `label-bootstrap` are a pair: the board skill invokes the
+label skill by name in Step 4 rather than carrying its own inline label
+logic, so there is one label SSOT and one force-sync policy.
 `--no-bootstrap-labels` skips that step.
 
 `add-ai-metrics` is the odd one out in tempo: it is a backfill, run once against
@@ -90,10 +90,10 @@ Antigravity (`agy`) shares `~/.gemini`, so it inherits the install.
 ## Harness support
 
 These skills are `gh` CLI calls, `lib/*.sh` scripts, and file writes, so they
-port cleanly. **None of them uses Claude Code's `Skill()`, `WebFetch`, or
-`AskUserQuestion`** — `kanban-bootstrap` reaches its sibling by running
-`skills/label-bootstrap/lib/label-bootstrap.sh` directly, which is a plain shell
-call, not a skill invocation. Every gap and its workaround is documented per
+port cleanly. **None of them uses `WebFetch` or depends on
+`AskUserQuestion`.** `kanban-bootstrap` delegates its label step to
+`gh-setup:label-bootstrap` by skill name (never a `../` path), which every
+harness maps under "Invoke a skill". Every gap and its workaround is documented per
 harness in
 [`harness-skills/references/`](https://github.com/dEitY719/harness-skills/tree/main/references);
 read the one file for the harness you are on.
