@@ -149,10 +149,11 @@ These are acceptance criteria carried over from dotfiles, not advice:
 ## Harness portability
 
 These four are unusually portable: they are `gh` CLI calls, `lib/*.sh` scripts,
-and file writes. None of them uses Claude Code's `Skill()`, `WebFetch`, or
-`AskUserQuestion` — `kanban-bootstrap` reaches its sibling by running
-`skills/label-bootstrap/lib/label-bootstrap.sh` directly, which is a plain shell
-call. The only harness-shaped gap is the two confirmation prompts
+and file writes. None of them uses `WebFetch` or depends on `AskUserQuestion`.
+`kanban-bootstrap` delegates its label step to `gh-setup:label-bootstrap` **by
+skill name**, never by a `../` path (a single-skill install has no sibling
+tree, dEitY719/gh-setup-skills#20); every harness maps "Invoke a skill" in
+`harness-skills`' `references/*-tools.md`. The only harness-shaped gap is the two confirmation prompts
 (`kanban-bootstrap`'s hide-columns question and `add-ai-metrics`'s
 `Continue with N cards?`): harnesses without a structured question tool must ask
 in the conversation and wait for a real reply. If you add a step that depends on

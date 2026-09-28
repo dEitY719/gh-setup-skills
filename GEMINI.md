@@ -52,10 +52,9 @@ On Antigravity read `antigravity-tools.md` in that same directory instead —
 
 ## Capability gaps on Gemini CLI
 
-- There are none of the usual ones. No skill here uses Claude Code's `Skill()`,
-  `WebFetch`, or `AskUserQuestion`. `kanban-bootstrap` reaches its sibling by
-  running `skills/label-bootstrap/lib/label-bootstrap.sh` through
-  `run_shell_command` — a plain shell call, not a skill invocation.
+- There are none of the usual ones. No skill here uses `WebFetch` or depends on
+  `AskUserQuestion`. `kanban-bootstrap` delegates its label step to
+  `gh-setup:label-bootstrap` by skill name — load it with `activate_skill`.
 - The `lib/*.sh` helpers are plain bash with no external UX library and run
   unchanged under `run_shell_command`. Pass their `[OK]` / `[FAIL]` lines and
   their dry-run plans through verbatim rather than summarising them.
