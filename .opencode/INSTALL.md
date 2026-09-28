@@ -56,7 +56,7 @@ Two things to know here:
 - Everything these skills do is a `gh` CLI call, a `lib/*.sh` script, or a file
   write. None of them uses `WebFetch` or depends on
   `AskUserQuestion`. `kanban-bootstrap` delegates its label step to
-  `gh-setup:label-bootstrap` by skill name — load it with the `skill` tool. Run the `lib/*.sh` helpers and pass their `[OK]` / `[FAIL]` lines and
+  `gh-setup:label-bootstrap` by skill name — load it per the "Invoke a skill" row above. Run the `lib/*.sh` helpers and pass their `[OK]` / `[FAIL]` lines and
   dry-run plans through verbatim; do not reimplement them.
 - OpenCode has no structured question tool. Two steps need a real answer:
   `kanban-bootstrap` asks once whether to hide the reserved columns when the
