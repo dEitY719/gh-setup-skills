@@ -161,6 +161,15 @@ a Claude-Code-only capability, say so in `README.md`'s harness-support matrix an
 open an issue against `harness-skills` so its `references/*-tools.md` gain the
 fallback.
 
+## Tests
+
+`tests/run.sh` runs every `lib/*.sh --self-test` and `skills/*/tests/*.sh`
+(called by the reusable `validate` workflow). `tests/bats/` holds bats suites
+that exercise the shipped `lib/*.sh` functions directly (extracted by name in
+`tests/bats/test_helper.bash`, never hand-copied); `.github/workflows/bats.yml`
+runs them in CI. Locally:
+`BATS_LIB_PATH=<path with bats-support,bats-assert> bats -r tests/bats`.
+
 ## Version bumps
 
 The version appears in seven manifests: `.claude-plugin/marketplace.json`,
