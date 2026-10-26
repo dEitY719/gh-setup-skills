@@ -159,9 +159,10 @@ main() {
     # is six hex letters (`facade`, `decade`) would otherwise also parse as a
     # bogus `pipeline`/`automation` label with that name as its color.
     local feed alias_feed prefixed_feed ssot_content
+    local prefixes='pipeline|automation'
     ssot_content="$(tr -d '\r' <"$ssot_file")"
     feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' \
-        | grep -vE '^[[:space:]]*(pipeline|automation)\|' || true)"
+        | grep -vE "^[[:space:]]*(${prefixes})\\|" || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"
     [ -n "$feed" ] || die "no label feed found in $ssot_file"
 
@@ -178,8 +179,8 @@ main() {
     # 10-label regex rejects, and consumers that skip such issues
     # (dEitY719/gh-flow-skills#70) need the label to exist (dEitY719/gh-setup-skills#23).
     prefixed_feed="$(printf '%s\n' "$ssot_content" \
-        | grep -E '^[[:space:]]*(pipeline|automation)\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|' \
-        | sed -E -e 's/^[[:space:]]*//' -e 's/^(pipeline|automation)\|//' || true)"
+        | grep -E "^[[:space:]]*(${prefixes})\\|[A-Za-z][A-Za-z0-9_-]*\\|[0-9a-fA-F]{6}\\|" \
+        | sed -E -e 's/^[[:space:]]*//' -e "s/^(${prefixes})\\|//" || true)"
     if [ -n "$prefixed_feed" ]; then
         feed="$(printf '%s\n%s' "$feed" "$prefixed_feed")"
     fi
@@ -232,7 +233,7 @@ main() {
         fi
     done <<<"$alias_feed"
 
-    # --- 2. SSOT 10 + prefixed feeds apply ---------------------------------------
+    # --- 2. SSOT 10 + prefixed feeds apply -------------------------------
     local name
     while IFS='|' read -r name color desc; do
         [ -z "$name" ] && continue
