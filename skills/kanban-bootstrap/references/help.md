@@ -46,7 +46,9 @@ label bootstrap, and host-aware UI checklist.
    the 10 SSOT labels (`feat`, `fix`, `docs`, `refactor`, `test`, `ci`,
    `chore`, `skill`, `TODO`, `reference`) per
    `gh-setup:label-bootstrap`'s `references/gh-labels.md`
-   and renames the 3 alias labels (`bug`->`fix`, `documentation`->`docs`,
+   plus its `pipeline|` / `automation|` feeds (`review-blocked`,
+   `review-passed`, `wontfix`, `not-implement`, `manual`), and renames the
+   3 alias labels (`bug`->`fix`, `documentation`->`docs`,
    `build`->`chore`) — idempotent.
 4. Dry-runs `lib/setup.sh`. Aborts if dry-run fails.
 5. Real-runs `lib/setup.sh`. Captures Project URL and number.

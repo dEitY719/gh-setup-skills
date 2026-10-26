@@ -53,8 +53,8 @@ Delegate by skill name — invoke the `gh-setup:label-bootstrap` skill with
 (`dEitY719/harness-skills` `references/*-tools.md`) — never by a `../` path:
 a harness that installs one skill directory has no sibling tree to reach
 into (dEitY719/gh-setup-skills#20). Not installed → one-line warning naming
-it, then continue to Step 5. It force-syncs the 10 SSOT labels'
-color/description and renames the 3 alias labels (SSOT: that skill's
+it, then continue to Step 5. It force-syncs the SSOT labels (10 + pipeline +
+automation feeds) and renames the 3 alias labels (SSOT: that skill's
 `references/gh-labels.md`).
 
 Pass `--dry-run` through on the dry-run dispatch (Step 5).

@@ -18,8 +18,9 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
   (`reference` 라벨 차단), `gh-pr:create` (커밋타입 → 라벨 매핑).
 - 범위 밖: `CI fail`(`gh-resolve:ci-fail`), `conflict`
   (`gh-resolve:conflict`) 등 별개 라벨 체계는 건드리지 않는다.
-- 예외: **파이프라인 상태 라벨**은 10-label SSOT 에 편입하지 않되, 이 문서의
-  별도 `pipeline|` feed 로 **프로비저닝만** 한다 (아래 "파이프라인 라벨" 절).
+- 예외: **파이프라인 상태 라벨**과 **자동화 제외 라벨**은 10-label SSOT 에
+  편입하지 않되, 이 문서의 별도 `pipeline|` / `automation|` feed 로
+  **프로비저닝만** 한다 (아래 "파이프라인 라벨" · "자동화 제외 라벨" 절).
 
 차용 근거 / 설계 논의: issue dEitY719/dotfiles#1226.
 
@@ -66,6 +67,28 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
 어두운 빨강, `0e8a16` 은 `test` 의 `2da44e` 보다 어두운 초록이라 카드 목록에서
 분류 라벨과 상태 라벨이 한눈에 갈린다.
 
+## 자동화 제외 라벨 (별도 feed, dEitY719/gh-setup-skills#23)
+
+`wontfix` / `not-implement` / `manual` 은 **"자동 처리 금지" 표지**다.
+avatar-issue-watcher 와 `gh-flow:issue|wave|waves` 가 이 라벨(과 10-label feed 의
+`TODO`)이 붙은 이슈를 사전에 건너뛴다 (dEitY719/gh-flow-skills#70). 라벨이 레포에
+없으면 사람도 워커도 붙일 수 없으므로 여기서 프로비저닝한다.
+
+| name | color | description |
+|---|---|---|
+| `wontfix` | `ffffff` | This will not be worked on |
+| `not-implement` | `e99695` | 구현하지 않기로 한 이슈 |
+| `manual` | `c2e0c6` | 사람이 직접 처리해야 하는 이슈 (자동 디스패치 제외) |
+
+10개 SSOT 에 넣지 **않는** 이유: 분류 축이 아닌 운영 라벨이고, `not-implement` 의
+하이픈이 10-label feed 정규식(`^[A-Za-z][A-Za-z0-9]*\|`)에 맞지 않으며, 파이프라인
+라벨이 이미 같은 선례다. `TODO` 는 10-label feed 에 이미 있으므로 여기에 중복
+정의하지 않는다 — 네 라벨 모두 같은 POST/PATCH 루프와 `--prune` keep 집합을 탄다.
+
+`wontfix` 는 GitHub 기본 라벨의 색/설명을 그대로 쓴다. 다른 SSOT 라벨과 똑같이
+force-sync 대상이므로, 레포에서 `wontfix` 의 색/설명을 바꿔 두었다면 실행 시
+`ffffff` / "This will not be worked on" 으로 **덮어쓴다** (이름·이슈 연결은 유지).
+
 ## Alias 매핑 (rename 대상)
 
 기존 이름이 대상 repo 에 존재하면 **삭제·재생성이 아니라 rename**
@@ -99,7 +122,7 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 - `--prune` 는 **기본 off** — 지정하지 않으면 어떤 라벨도 삭제되지
   않는다 (후보 나열 같은 부수효과도 없다). 라벨 삭제는 항상 opt-in 이다.
 - `--prune` 지정 시, 다음 합집합에 **없는** 라벨만 삭제 후보다:
-  (SSOT 10개) ∪ (**파이프라인 feed 2개**) ∪ (alias 신규 이름
+  (SSOT 10개) ∪ (**파이프라인 feed 2개**) ∪ (**자동화 제외 feed 3개**) ∪ (alias 신규 이름
   `fix`/`docs`/`chore`) ∪ (prune allowlist 7종).
 - 파이프라인 라벨은 `--prune` 에서 **항상 보존**된다. 여기서 지워지면
   `gh-verify:review-all` 이 판정을 못 붙이고 (rc 3), 머지 트레인이 모든 PR 을
@@ -116,13 +139,13 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 
 ## Plain feed (스킬이 직접 파싱)
 
-`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 아래 **세 블록**을
+`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 아래 **네 블록**을
 정규식으로 뽑아 쓴다. 표(위)와 값이 어긋나면 안 되므로 이 블록이 유일한
 기계 판독 소스다.
 
-세 feed 는 서로 다른 정규식으로 잡히고 겹치지 않는다 — 10-label feed 는
+네 feed 는 서로 다른 정규식으로 잡히고 겹치지 않는다 — 10-label feed 는
 `name|<6hex>|`, alias feed 는 `old|new` (소문자 두 단어), 파이프라인 feed 는
-`pipeline|` 접두어. 접두어는 파싱 직후 벗겨져 10-label feed 와 **같은
+`pipeline|` 접두어, 자동화 제외 feed 는 `automation|` 접두어. 접두어는 파싱 직후 벗겨져 10-label feed 와 **같은
 POST/PATCH 루프**에 합류하고, `--prune` 의 keep 집합에도 함께 들어간다.
 
 ### 10개 라벨 (`name|color|description`)
@@ -155,6 +178,14 @@ pipeline|review-blocked|b60205|at least one reviewer lane returned a blocking ve
 pipeline|review-passed|0e8a16|every reviewer lane that ran returned a non-blocking verdict, and at least one lane ran
 ```
 
+### 자동화 제외 라벨 (`automation|name|color|description`)
+
+```
+automation|wontfix|ffffff|This will not be worked on
+automation|not-implement|e99695|구현하지 않기로 한 이슈
+automation|manual|c2e0c6|사람이 직접 처리해야 하는 이슈 (자동 디스패치 제외)
+```
+
 ## Related
 
 - 스킬: `skills/label-bootstrap/SKILL.md`
@@ -166,4 +197,5 @@ pipeline|review-passed|0e8a16|every reviewer lane that ran returned a non-blocki
 - 파이프라인 feed 소비: `gh-verify:review-all` 의 `references/review-verdict-label.md`
   (생산자), `gh-pr:merge-train` 의 `references/review-verdict-gate.md`
   (소비자)
-- 설계 논의: issue dEitY719/dotfiles#1226 · 파이프라인 feed: issue dEitY719/dotfiles#1564 (상위 dEitY719/dotfiles#1527)
+- 자동화 제외 feed 소비: dEitY719/gh-flow-skills#70 (제외 라벨 사전 게이트)
+- 설계 논의: issue dEitY719/dotfiles#1226 · 파이프라인 feed: issue dEitY719/dotfiles#1564 (상위 dEitY719/dotfiles#1527) · 자동화 제외 feed: issue dEitY719/gh-setup-skills#23

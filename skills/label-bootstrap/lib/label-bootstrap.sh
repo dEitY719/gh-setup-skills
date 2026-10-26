@@ -11,12 +11,14 @@ set -euo pipefail
 #
 # Behavior (see references/gh-labels.md for the authoritative spec):
 #   1. Alias renames first  — PATCH old -> new_name (preserves issue/PR links).
-#   2. SSOT 10 + pipeline    — PATCH if exists (force color/description sync),
-#      apply                   POST if missing. The `pipeline|`-prefixed feed
-#                              (dEitY719/dotfiles#1564) joins this loop with its prefix stripped.
+#   2. SSOT 10 + prefixed    — PATCH if exists (force color/description sync),
+#      feeds apply             POST if missing. The `pipeline|`-prefixed feed
+#                              (dEitY719/dotfiles#1564) and the `automation|`-prefixed
+#                              feed (dEitY719/gh-setup-skills#23) join this loop
+#                              with their prefix stripped.
 #   3. Prune (only --prune)  — DELETE labels outside SSOT ∪ pipeline ∪
-#                              alias-targets ∪ allowlist, computed AFTER
-#                              renames.
+#                              automation ∪ alias-targets ∪ allowlist,
+#                              computed AFTER renames.
 #
 # --dry-run makes ZERO mutating gh api calls (no POST/PATCH/DELETE).
 # --prune defaults OFF; without it no label is ever deleted.
@@ -146,15 +148,16 @@ main() {
     # 10-label feed:  name|<6hex>|description
     # alias feed:     old|new     (two lowercase words)
     # pipeline feed:  pipeline|name|<6hex>|description        (dEitY719/dotfiles#1564)
+    # automation feed: automation|name|<6hex>|description     (dEitY719/gh-setup-skills#23)
     # tr -d '\r' + leading-whitespace tolerance guard against CRLF checkouts
     # and incidental fence indentation (gemini-code-assist review, PR dEitY719/dotfiles#1229).
     #
-    # The three regexes are mutually exclusive by construction: a pipeline row
+    # The regexes are mutually exclusive by construction: a prefixed row
     # cannot match the 10-label pattern (what follows its first `|` is a label
     # name, not 6 hex digits) and cannot match the alias pattern (it carries
-    # hyphens and three separators). So the prefix is a real namespace, not a
-    # convention the parser hopes holds.
-    local feed alias_feed pipeline_feed ssot_content
+    # three separators). So the prefix is a real namespace, not a convention
+    # the parser hopes holds.
+    local feed alias_feed prefixed_feed ssot_content
     ssot_content="$(tr -d '\r' <"$ssot_file")"
     feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"
@@ -168,11 +171,15 @@ main() {
     # Deleting them would leave `gh-verify:review-all` unable to issue a verdict
     # (`_gh_pr_edit_safe_label` rc 3, dEitY719/dotfiles#326) and the merge train reading every
     # PR as unverified — the whole pipeline stops (dEitY719/dotfiles#1564).
-    pipeline_feed="$(printf '%s\n' "$ssot_content" \
-        | grep -E '^[[:space:]]*pipeline\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|' \
-        | sed -e 's/^[[:space:]]*//' -e 's/^pipeline|//' || true)"
-    if [ -n "$pipeline_feed" ]; then
-        feed="$(printf '%s\n%s' "$feed" "$pipeline_feed")"
+    # Automation-exclusion labels (wontfix / not-implement / manual) ride the
+    # same path for the same reason: `not-implement` carries a hyphen the
+    # 10-label regex rejects, and consumers that skip such issues
+    # (dEitY719/gh-flow-skills#70) need the label to exist (dEitY719/gh-setup-skills#23).
+    prefixed_feed="$(printf '%s\n' "$ssot_content" \
+        | grep -E '^[[:space:]]*(pipeline|automation)\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|' \
+        | sed -E -e 's/^[[:space:]]*//' -e 's/^(pipeline|automation)\|//' || true)"
+    if [ -n "$prefixed_feed" ]; then
+        feed="$(printf '%s\n%s' "$feed" "$prefixed_feed")"
     fi
 
     # SSOT label names (for keep-set membership).
@@ -223,7 +230,7 @@ main() {
         fi
     done <<<"$alias_feed"
 
-    # --- 2. SSOT 10 + pipeline apply ---------------------------------------
+    # --- 2. SSOT 10 + prefixed feeds apply ---------------------------------------
     local name
     while IFS='|' read -r name color desc; do
         [ -z "$name" ] && continue
@@ -252,7 +259,7 @@ main() {
 
     # --- 3. Prune (opt-in only) -------------------------------------------
     if $PRUNE; then
-        # keep = SSOT names (pipeline labels included — they were merged into
+        # keep = SSOT names (prefixed labels included — they were merged into
         #        `feed` above, so `ssot_names` already carries them) ∪ alias
         #        new names ∪ allowlist
         local keep alias_targets allow_nl
