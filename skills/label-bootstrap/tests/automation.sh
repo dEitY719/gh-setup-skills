@@ -54,12 +54,16 @@ chmod +x "${WORK}/bin/gh"
 
 run() { PATH="${WORK}/bin:${PATH}" bash "$SCRIPT" --repo fake/repo "$@"; }
 
+assert_exclusion_labels() {
+    for l in wontfix not-implement TODO manual; do
+        grep -Fxq "$l" "$FAKE_LABELS" || fail "label '$l' missing ($1)"
+    done
+}
+
 # 1. Empty repo: all four exclusion labels exist afterwards.
 out="$(run)"
 assert_contains "$out" 'Summary: renamed=0 created=15 synced=0 pruned=0 failed=0' "first-run summary"
-for l in wontfix not-implement TODO manual; do
-    grep -Fxq "$l" "$FAKE_LABELS" || fail "label '$l' not created on an empty repo"
-done
+assert_exclusion_labels "empty repo"
 # not-implement parsed with its own color — the hyphen must not drop the row.
 assert_contains "$out" "POST label 'not-implement' (color=e99695)" "not-implement parsed"
 
@@ -71,9 +75,7 @@ assert_contains "$out" 'Summary: renamed=0 created=0 synced=15 pruned=0 failed=0
 printf 'old-custom\n' >>"$FAKE_LABELS"
 out="$(run --prune)"
 assert_contains "$out" 'Summary: renamed=0 created=0 synced=15 pruned=1 failed=0' "prune summary"
-for l in wontfix not-implement TODO manual; do
-    grep -Fxq "$l" "$FAKE_LABELS" || fail "--prune deleted '$l'"
-done
+assert_exclusion_labels "after --prune"
 grep -Fxq old-custom "$FAKE_LABELS" && fail "--prune kept a non-SSOT label"
 
 # 4. GitHub label names are case-insensitive: an existing `Manual` is synced
