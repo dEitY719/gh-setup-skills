@@ -35,16 +35,20 @@ if [[ "$path" == repos/*/labels?per_page=100 ]]; then
     cat "$FAKE_LABELS"
     exit 0
 fi
-method="" name=""
+method="" name="" new_name=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
     -X) method="$2"; shift 2 ;;
-    -f) case "$2" in name=*) name="${2#name=}" ;; esac; shift 2 ;;
+    -f) case "$2" in name=*) name="${2#name=}" ;; new_name=*) new_name="${2#new_name=}" ;; esac; shift 2 ;;
     *) shift ;;
     esac
 done
 case "$method" in
 POST) printf '%s\n' "$name" >>"$FAKE_LABELS" ;;
+# GitHub resolves the path name case-insensitively and applies new_name as given.
+PATCH) awk -v old="${path##*/labels/}" -v new="$new_name" \
+        'tolower($0)==tolower(old){$0=new} {print}' "$FAKE_LABELS" >"${FAKE_LABELS}.tmp"
+    mv "${FAKE_LABELS}.tmp" "$FAKE_LABELS" ;;
 DELETE) grep -Fxv "${path##*/labels/}" "$FAKE_LABELS" >"${FAKE_LABELS}.tmp" || true
     mv "${FAKE_LABELS}.tmp" "$FAKE_LABELS" ;;
 esac
@@ -59,6 +63,11 @@ assert_exclusion_labels() {
         grep -Fxq "$l" "$FAKE_LABELS" || fail "label '$l' missing ($1)"
     done
 }
+
+# 0. --dry-run on an empty repo plans the new feed but mutates nothing.
+out="$(run --dry-run)"
+assert_contains "$out" "[dry-run] POST label 'not-implement' (color=e99695)" "dry-run plans not-implement"
+[ -s "$FAKE_LABELS" ] && fail "--dry-run created labels"
 
 # 1. Empty repo: all four exclusion labels exist afterwards.
 out="$(run)"
@@ -79,10 +88,12 @@ assert_exclusion_labels "after --prune"
 grep -Fxq old-custom "$FAKE_LABELS" && fail "--prune kept a non-SSOT label"
 
 # 4. GitHub label names are case-insensitive: an existing `Manual` is synced
-#    (not re-POSTed) and survives --prune.
+#    (not re-POSTed), recased to the SSOT `manual` by PATCH new_name, and
+#    survives --prune.
 printf 'Manual\n' >"$FAKE_LABELS"
 out="$(run --prune)"
 assert_contains "$out" 'Summary: renamed=0 created=14 synced=1 pruned=0 failed=0' "case-variant summary"
-grep -Fxq Manual "$FAKE_LABELS" || fail "--prune deleted case-variant 'Manual'"
+grep -Fxq manual "$FAKE_LABELS" || fail "case-variant 'Manual' not recased to 'manual' (or pruned)"
+grep -Fxq Manual "$FAKE_LABELS" && fail "case-variant 'Manual' kept its old case"
 
 echo "[OK] all label-bootstrap automation-feed checks passed"

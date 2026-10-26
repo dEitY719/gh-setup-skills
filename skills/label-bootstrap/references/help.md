@@ -57,6 +57,11 @@ recoloured it or rewritten its description, a run **overwrites** both back to
 `ffffff` / "This will not be worked on". The name and every issue already
 carrying it are untouched (F-3 of dEitY719/gh-setup-skills#23).
 
+Name matching is case-insensitive, as GitHub's is: an existing `Manual`,
+`todo` or `Bug` counts as the SSOT/alias label, so it is PATCHed (and recased
+to the SSOT spelling via `new_name`) or renamed rather than re-POSTed, and
+`--prune` never deletes it.
+
 ## Safety
 
 - `--prune` defaults OFF — the tool never deletes a label unless you ask.
