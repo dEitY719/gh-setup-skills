@@ -129,9 +129,11 @@ api_mutate() {
 }
 
 # Membership test against a newline-separated set on stdin-free vars.
+# Case-insensitive because GitHub label names are: an existing `Manual` IS
+# `manual` (POST would 422, and --prune would DELETE the label we keep).
 in_set() {
     # $1 = needle, $2 = newline-separated haystack
-    printf '%s\n' "$2" | grep -Fxq "$1"
+    printf '%s\n' "$2" | grep -Fxqi -- "$1"
 }
 
 main() {
@@ -152,14 +154,14 @@ main() {
     # tr -d '\r' + leading-whitespace tolerance guard against CRLF checkouts
     # and incidental fence indentation (gemini-code-assist review, PR dEitY719/dotfiles#1229).
     #
-    # The regexes are mutually exclusive by construction: a prefixed row
-    # cannot match the 10-label pattern (what follows its first `|` is a label
-    # name, not 6 hex digits) and cannot match the alias pattern (it carries
-    # three separators). So the prefix is a real namespace, not a convention
-    # the parser hopes holds.
+    # Prefixed rows cannot match the alias pattern (three separators), and are
+    # explicitly excluded from the 10-label feed: a prefixed label whose name
+    # is six hex letters (`facade`, `decade`) would otherwise also parse as a
+    # bogus `pipeline`/`automation` label with that name as its color.
     local feed alias_feed prefixed_feed ssot_content
     ssot_content="$(tr -d '\r' <"$ssot_file")"
-    feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' || true)"
+    feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' \
+        | grep -vE '^[[:space:]]*(pipeline|automation)\|' || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"
     [ -n "$feed" ] || die "no label feed found in $ssot_file"
 
@@ -220,7 +222,7 @@ main() {
                 "repos/${REPO}/labels/${old}" -X PATCH \
                 -f "new_name=${new}" -f "color=${color}" -f "description=${desc}"; then
                 # Reflect in effective set: drop old, add new.
-                effective="$(printf '%s\n' "$effective" | grep -Fxv "$old" || true)"
+                effective="$(printf '%s\n' "$effective" | grep -Fxvi -- "$old" || true)"
                 in_set "$new" "$effective" || effective="$(printf '%s\n%s' "$effective" "$new")"
                 renamed_targets="${renamed_targets}${new}"$'\n'
                 n_renamed=$((n_renamed + 1))
