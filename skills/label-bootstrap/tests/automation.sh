@@ -76,4 +76,11 @@ for l in wontfix not-implement TODO manual; do
 done
 grep -Fxq old-custom "$FAKE_LABELS" && fail "--prune kept a non-SSOT label"
 
+# 4. GitHub label names are case-insensitive: an existing `Manual` is synced
+#    (not re-POSTed) and survives --prune.
+printf 'Manual\n' >"$FAKE_LABELS"
+out="$(run --prune)"
+assert_contains "$out" 'Summary: renamed=0 created=14 synced=1 pruned=0 failed=0' "case-variant summary"
+grep -Fxq Manual "$FAKE_LABELS" || fail "--prune deleted case-variant 'Manual'"
+
 echo "[OK] all label-bootstrap automation-feed checks passed"
