@@ -40,12 +40,12 @@ EOF
 chmod +x "${FAKE_BIN}/gh"
 
 out="$(PATH="${FAKE_BIN}:${PATH}" bash "$SCRIPT" --repo fake/repo --dry-run)"
-assert_contains "$out" 'Summary: renamed=1 created=10 synced=1 pruned=0 failed=0' "dry-run summary"
+assert_contains "$out" 'Summary: renamed=1 created=13 synced=1 pruned=0 failed=0' "dry-run summary"
 assert_contains "$out" '[OK] Labels synced to SSOT for fake/repo (dry-run)' "dry-run verdict"
 
 out="$(PATH="${FAKE_BIN}:${PATH}" bash "$SCRIPT" --repo fake/repo)"
 rc=$?
-assert_contains "$out" 'Summary: renamed=1 created=10 synced=1 pruned=0 failed=0' "real-run summary"
+assert_contains "$out" 'Summary: renamed=1 created=13 synced=1 pruned=0 failed=0' "real-run summary"
 assert_contains "$out" '[OK] Labels synced to SSOT for fake/repo' "real-run verdict"
 [ "$rc" -eq 0 ] || fail "real-run success path must exit 0"
 
@@ -68,7 +68,7 @@ set +e
 out="$(PATH="${FAKE_BIN}:${PATH}" bash "$SCRIPT" --repo fake/repo --prune 2>/dev/null)"
 rc=$?
 set -e
-assert_contains "$out" 'Summary: renamed=0 created=0 synced=0 pruned=0 failed=15' "all-fail summary"
+assert_contains "$out" 'Summary: renamed=0 created=0 synced=0 pruned=0 failed=18' "all-fail summary"
 assert_contains "$out" '[FAIL] Label sync incomplete for fake/repo' "all-fail verdict"
 [ "$rc" -eq 1 ] || fail "a run where every mutation fails must exit non-zero (got $rc)"
 

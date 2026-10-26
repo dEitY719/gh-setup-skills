@@ -74,8 +74,8 @@ to apply.`; after a real run, `Next: gh label list --repo <owner/repo>` to
 verify, or `/gh-setup:kanban-bootstrap` to set up the board.
 
 Force-sync semantics (every existing SSOT label is PATCHed unconditionally,
-no skip mode), the 3 alias renames, the `--prune` set algebra, and the 2
-pipeline-state labels are documented in `references/help.md`; the label
+no skip mode), the 3 alias renames, the `--prune` set algebra, the 2
+pipeline-state and 3 automation-exclusion labels are in `references/help.md`; the label
 feed itself is `references/gh-labels.md`.
 
 ## Constraints
@@ -83,7 +83,7 @@ feed itself is `references/gh-labels.md`.
 - Never mutate the script's behavior — wrap, don't rewrite.
 - `--dry-run` must make zero POST/PATCH/DELETE API calls.
 - Never delete a label unless `--prune` was explicitly passed.
-- The 10-label + alias + pipeline SSOT lives only in
+- The 10-label + alias + pipeline + automation SSOT lives only in
   `references/gh-labels.md` — do not hardcode a second copy here or in the
   script.
 - `lib/label-bootstrap.sh` is the sole entry point; invoke it directly
