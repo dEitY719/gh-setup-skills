@@ -184,7 +184,9 @@ main() {
     # --prune could fall out of sync with (dEitY719/gh-setup-skills#25 F-6).
     local feed alias_feed prefixed_feed ssot_content
     local prefixed_re='^[[:space:]]*[a-z]+\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|'
-    ssot_content="$(tr -d '\r' <"$ssot_file")"
+    # Only the "## Plain feed" section is parsed: a feed-shaped line in prose
+    # or an example elsewhere must never become a live (prune-proof) label.
+    ssot_content="$(tr -d '\r' <"$ssot_file" | sed -n '/^## Plain feed/,/^## /p')"
     feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' \
         | grep -vE "$prefixed_re" || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"

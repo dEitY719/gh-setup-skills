@@ -42,4 +42,11 @@ out="$(run --prune)"
 assert_contains "$out" 'Summary: renamed=0 created=17 synced=1 pruned=0 failed=0' "case-variant summary"
 grep -Fxq home-pc "$FAKE_LABELS" || fail "case-variant 'Home-PC' not recased to 'home-pc'"
 
+# 5. A feed-shaped line outside "## Plain feed" (prose / example) is not parsed.
+ssot="${WORK}/gh-labels.md"
+{ printf '## Example\n\nmachine|stray-pc|000000|example only\n\n'; cat "${LB_SCRIPT%/lib/*}/references/gh-labels.md"; } >"$ssot"
+out="$(GH_LABELS_SSOT="$ssot" run --dry-run)"
+printf '%s\n' "$out" | grep -q stray-pc && fail "feed line outside Plain feed was parsed"
+assert_contains "$out" "PATCH label 'home-pc'" "SSOT override still parses the Plain feed"
+
 echo "[OK] all label-bootstrap machine-feed checks passed"
