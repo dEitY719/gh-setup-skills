@@ -18,9 +18,10 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
   (`reference` 라벨 차단), `gh-pr:create` (커밋타입 → 라벨 매핑).
 - 범위 밖: `CI fail`(`gh-resolve:ci-fail`), `conflict`
   (`gh-resolve:conflict`) 등 별개 라벨 체계는 건드리지 않는다.
-- 예외: **파이프라인 상태 라벨**과 **자동화 제외 라벨**은 10-label SSOT 에
-  편입하지 않되, 이 문서의 별도 `pipeline|` / `automation|` feed 로
-  **프로비저닝만** 한다 (아래 "파이프라인 라벨" · "자동화 제외 라벨" 절).
+- 예외: **파이프라인 상태 라벨**, **자동화 제외 라벨**, **머신(PC) 라벨**은
+  10개 분류 라벨에 편입하지 않되, 이 문서의 별도 `pipeline|` / `automation|` /
+  `machine|` feed 로 **프로비저닝만** 한다 (아래 "파이프라인 라벨" · "자동화
+  제외 라벨" · "머신(PC) 라벨" 절).
 
 차용 근거 / 설계 논의: issue dEitY719/dotfiles#1226.
 
@@ -70,7 +71,7 @@ dotfiles 저장소를 포함한 임의의 GitHub repo 에 적용할 **10개 핵�
 ## 자동화 제외 라벨 (별도 feed, dEitY719/gh-setup-skills#23)
 
 `wontfix` / `not-implement` / `manual` 은 **"자동 처리 금지" 표지**다.
-avatar-issue-watcher 와 `gh-flow:issue|wave|waves` 가 이 라벨(과 10-label feed 의
+avatar-issue-watcher 와 `gh-flow:issue|wave|waves` 가 이 라벨(과 분류 feed 의
 `TODO`)이 붙은 이슈를 사전에 건너뛴다 (dEitY719/gh-flow-skills#70). 라벨이 레포에
 없으면 사람도 워커도 붙일 수 없으므로 여기서 프로비저닝한다.
 
@@ -81,13 +82,31 @@ avatar-issue-watcher 와 `gh-flow:issue|wave|waves` 가 이 라벨(과 10-label 
 | `manual` | `c2e0c6` | 사람이 직접 처리해야 하는 이슈 (자동 디스패치 제외) |
 
 10개 SSOT 에 넣지 **않는** 이유: 분류 축이 아닌 운영 라벨이고, `not-implement` 의
-하이픈이 10-label feed 정규식(`^[A-Za-z][A-Za-z0-9]*\|`)에 맞지 않으며, 파이프라인
-라벨이 이미 같은 선례다. `TODO` 는 10-label feed 에 이미 있으므로 여기에 중복
+하이픈이 분류 feed 정규식(`^[A-Za-z][A-Za-z0-9]*\|`)에 맞지 않으며, 파이프라인
+라벨이 이미 같은 선례다. `TODO` 는 분류 feed 에 이미 있으므로 여기에 중복
 정의하지 않는다 — 네 라벨 모두 같은 POST/PATCH 루프와 `--prune` keep 집합을 탄다.
 
 `wontfix` 는 GitHub 기본 라벨의 색/설명을 그대로 쓴다. 다른 SSOT 라벨과 똑같이
 force-sync 대상이므로, 레포에서 `wontfix` 의 색/설명을 바꿔 두었다면 실행 시
 `ffffff` / "This will not be worked on" 으로 **덮어쓴다** (이름·이슈 연결은 유지).
+
+## 머신(PC) 라벨 (별도 feed, dEitY719/gh-setup-skills#25)
+
+`home-pc` / `internal-pc` / `external-pc` 는 **"어느 PC 에서 처리할 이슈인가"** 표지다.
+작업 PC 가 집 / 사내망(internal) / 외부망(external) 으로 나뉘고 (dotfiles PC
+setup-mode `home` | `internal` | `external`), 이슈마다 처리 가능한 PC 가 다르다.
+라벨이 레포에 없으면 붙일 수 없으므로 여기서 프로비저닝한다.
+
+| name | color | description |
+|---|---|---|
+| `home-pc` | `fef2c0` | 집 PC(home)에서 처리할 이슈 |
+| `internal-pc` | `d4c5f9` | 사내망 PC(internal)에서 처리할 이슈 |
+| `external-pc` | `c5def5` | 외부망 PC(external)에서 처리할 이슈 |
+
+10개 분류 라벨에 넣지 **않는** 이유: 분류 축이 아닌 운영 표지이고 (`automation|`
+선례), 하이픈이 분류 feed 정규식에 맞지 않는다. 색은 파스텔 3색으로 기존 15색과
+겹치지 않고 분류·상태 라벨과 한눈에 갈린다. 이슈당 1개 강제와 소비 로직(현재 PC 와
+비교해 건너뛰기)은 이 스킬 범위 밖이다 — 라벨 정의만 다룬다.
 
 ## Alias 매핑 (rename 대상)
 
@@ -122,7 +141,7 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 - `--prune` 는 **기본 off** — 지정하지 않으면 어떤 라벨도 삭제되지
   않는다 (후보 나열 같은 부수효과도 없다). 라벨 삭제는 항상 opt-in 이다.
 - `--prune` 지정 시, 다음 합집합에 **없는** 라벨만 삭제 후보다:
-  (SSOT 10개) ∪ (**파이프라인 feed 2개**) ∪ (**자동화 제외 feed 3개**) ∪ (alias 신규 이름
+  (분류 10개) ∪ (**모든 접두어 feed** — 파이프라인 2 · 자동화 제외 3 · 머신 3) ∪ (alias 신규 이름
   `fix`/`docs`/`chore`) ∪ (prune allowlist 7종).
 - 파이프라인 라벨은 `--prune` 에서 **항상 보존**된다. 여기서 지워지면
   `gh-verify:review-all` 이 판정을 못 붙이고 (rc 3), 머지 트레인이 모든 PR 을
@@ -139,16 +158,18 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 
 ## Plain feed (스킬이 직접 파싱)
 
-`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 아래 **네 블록**을
+`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 아래 블록들을
 정규식으로 뽑아 쓴다. 표(위)와 값이 어긋나면 안 되므로 이 블록이 유일한
 기계 판독 소스다.
 
-네 feed 는 서로 다른 정규식으로 잡히고 겹치지 않는다 — 10-label feed 는
-`name|<6hex>|`, alias feed 는 `old|new` (소문자 두 단어), 파이프라인 feed 는
-`pipeline|` 접두어, 자동화 제외 feed 는 `automation|` 접두어. 접두어는 파싱 직후 벗겨져 10-label feed 와 **같은
-POST/PATCH 루프**에 합류하고, `--prune` 의 keep 집합에도 함께 들어간다.
+feed 는 세 형태로 잡히고 겹치지 않는다 — 분류 feed 는 `name|<6hex>|`, alias
+feed 는 `old|new` (소문자 두 단어), 접두어 feed 는 `<prefix>|name|<6hex>|`
+(소문자 접두어). **접두어 목록은 이 블록들에서 자동으로 뽑는다** — 스크립트에
+두 번째 목록이 없으므로, 새 feed 는 아래에 블록 하나를 추가하는 것으로 끝난다.
+접두어는 파싱 직후 벗겨져 분류 feed 와 **같은 POST/PATCH 루프**에 합류하고,
+`--prune` 의 keep 집합에도 함께 들어간다.
 
-### 10개 라벨 (`name|color|description`)
+### 10개 분류 라벨 (`name|color|description`)
 
 ```
 feat|fbca04|신규 기능 또는 개선 (perf 흡수)
@@ -186,6 +207,14 @@ automation|not-implement|e99695|구현하지 않기로 한 이슈
 automation|manual|c2e0c6|사람이 직접 처리해야 하는 이슈 (자동 디스패치 제외)
 ```
 
+### 머신(PC) 라벨 (`machine|name|color|description`)
+
+```
+machine|home-pc|fef2c0|집 PC(home)에서 처리할 이슈
+machine|internal-pc|d4c5f9|사내망 PC(internal)에서 처리할 이슈
+machine|external-pc|c5def5|외부망 PC(external)에서 처리할 이슈
+```
+
 ## Related
 
 - 스킬: `skills/label-bootstrap/SKILL.md`
@@ -198,4 +227,4 @@ automation|manual|c2e0c6|사람이 직접 처리해야 하는 이슈 (자동 디
   (생산자), `gh-pr:merge-train` 의 `references/review-verdict-gate.md`
   (소비자)
 - 자동화 제외 feed 소비: dEitY719/gh-flow-skills#70 (제외 라벨 사전 게이트)
-- 설계 논의: issue dEitY719/dotfiles#1226 · 파이프라인 feed: issue dEitY719/dotfiles#1564 (상위 dEitY719/dotfiles#1527) · 자동화 제외 feed: issue dEitY719/gh-setup-skills#23
+- 설계 논의: issue dEitY719/dotfiles#1226 · 파이프라인 feed: issue dEitY719/dotfiles#1564 (상위 dEitY719/dotfiles#1527) · 자동화 제외 feed: issue dEitY719/gh-setup-skills#23 · 머신 feed: issue dEitY719/gh-setup-skills#25

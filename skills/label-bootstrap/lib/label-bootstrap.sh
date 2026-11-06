@@ -11,14 +11,14 @@ set -euo pipefail
 #
 # Behavior (see references/gh-labels.md for the authoritative spec):
 #   1. Alias renames first  — PATCH old -> new_name (preserves issue/PR links).
-#   2. SSOT 10 + prefixed    — PATCH if exists (force color/description sync),
-#      feeds apply             POST if missing. The `pipeline|`-prefixed feed
-#                              (dEitY719/dotfiles#1564) and the `automation|`-prefixed
-#                              feed (dEitY719/gh-setup-skills#23) join this loop
-#                              with their prefix stripped.
-#   3. Prune (only --prune)  — DELETE labels outside SSOT ∪ pipeline ∪
-#                              automation ∪ alias-targets ∪ allowlist,
-#                              computed AFTER renames.
+#   2. SSOT labels apply     — PATCH if exists (force color/description sync),
+#                              POST if missing. Every prefixed feed
+#                              (`pipeline|` dEitY719/dotfiles#1564, `automation|`
+#                              dEitY719/gh-setup-skills#23, `machine|`
+#                              dEitY719/gh-setup-skills#25, ...) joins this loop
+#                              with its prefix stripped.
+#   3. Prune (only --prune)  — DELETE labels outside SSOT (all feeds) ∪
+#                              alias-targets ∪ allowlist, computed AFTER renames.
 #
 # --dry-run makes ZERO mutating gh api calls (no POST/PATCH/DELETE).
 # --prune defaults OFF; without it no label is ever deleted.
@@ -128,6 +128,23 @@ api_mutate() {
     return 1
 }
 
+# Percent-encode a label name for a URL path segment (`good first issue`,
+# `priority: high`). Byte-wise under LC_ALL=C so multibyte names encode as UTF-8.
+uri_encode() {
+    local LC_ALL=C s="$1" out="" c h i
+    for ((i = 0; i < ${#s}; i++)); do
+        c="${s:i:1}"
+        case "$c" in
+        [A-Za-z0-9._~-]) out+="$c" ;;
+        *)
+            printf -v h '%%%02X' "'$c"
+            out+="$h"
+            ;;
+        esac
+    done
+    printf '%s' "$out"
+}
+
 # Membership test against a newline-separated set on stdin-free vars.
 # Case-insensitive because GitHub label names are: an existing `Manual` IS
 # `manual` (POST would 422, and --prune would DELETE the label we keep).
@@ -147,27 +164,35 @@ main() {
     resolve_repo
 
     # --- Parse SSOT plain feeds -------------------------------------------
-    # 10-label feed:  name|<6hex>|description
-    # alias feed:     old|new     (two lowercase words)
-    # pipeline feed:  pipeline|name|<6hex>|description        (dEitY719/dotfiles#1564)
-    # automation feed: automation|name|<6hex>|description     (dEitY719/gh-setup-skills#23)
+    # classification feed: name|<6hex>|description
+    # alias feed:          old|new     (two lowercase words)
+    # prefixed feeds:      <prefix>|name|<6hex>|description — pipeline|
+    #                      (dEitY719/dotfiles#1564), automation|
+    #                      (dEitY719/gh-setup-skills#23), machine| (#25), ...
     # tr -d '\r' + leading-whitespace tolerance guard against CRLF checkouts
     # and incidental fence indentation (gemini-code-assist review, PR dEitY719/dotfiles#1229).
     #
     # Prefixed rows cannot match the alias pattern (three separators), and are
-    # explicitly excluded from the 10-label feed: a prefixed label whose name
-    # is six hex letters (`facade`, `decade`) would otherwise also parse as a
-    # bogus `pipeline`/`automation` label with that name as its color.
-    local feed alias_feed prefixed_feed ssot_content
-    local prefixes='pipeline|automation'
+    # explicitly excluded from the classification feed: a prefixed label whose
+    # name is six hex letters (`facade`, `decade`) would otherwise also parse
+    # as a bogus `pipeline`/`automation` label with that name as its color.
+    #
+    # The prefix list is derived from the SSOT itself (any lowercase word
+    # leading a `prefix|name|<6hex>|` row), so a new feed is one edit to
+    # gh-labels.md — no second list here that --prune could fall out of sync
+    # with (dEitY719/gh-setup-skills#25 F-6).
+    local feed alias_feed prefixed_feed ssot_content prefixes
+    local prefixed_re='^[[:space:]]*[a-z]+\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|'
     ssot_content="$(tr -d '\r' <"$ssot_file")"
+    prefixes="$(printf '%s\n' "$ssot_content" | grep -E "$prefixed_re" \
+        | sed -E 's/^[[:space:]]*([a-z]+)\|.*/\1/' | sort -u | paste -sd'|' - || true)"
     feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' \
         | grep -vE "^[[:space:]]*(${prefixes})\\|" || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"
     [ -n "$feed" ] || die "no label feed found in $ssot_file"
 
     # Pipeline-state labels (review-blocked / review-passed): provisioned by
-    # this script but deliberately NOT part of the 10-label SSOT — they are
+    # this script but deliberately NOT part of the classification SSOT — they are
     # not an issue-classification axis and have no aliases. The prefix is
     # stripped here so they join the ordinary POST/PATCH loop below, and
     # because they land in `feed` they are also in the `--prune` keep set.
@@ -176,10 +201,11 @@ main() {
     # PR as unverified — the whole pipeline stops (dEitY719/dotfiles#1564).
     # Automation-exclusion labels (wontfix / not-implement / manual) ride the
     # same path for the same reason: `not-implement` carries a hyphen the
-    # 10-label regex rejects, and consumers that skip such issues
+    # classification regex rejects, and consumers that skip such issues
     # (dEitY719/gh-flow-skills#70) need the label to exist (dEitY719/gh-setup-skills#23).
+    # Machine labels (home-pc / internal-pc / external-pc, #25) follow suit.
     prefixed_feed="$(printf '%s\n' "$ssot_content" \
-        | grep -E "^[[:space:]]*(${prefixes})\\|[A-Za-z][A-Za-z0-9_-]*\\|[0-9a-fA-F]{6}\\|" \
+        | grep -E "$prefixed_re" \
         | sed -E -e 's/^[[:space:]]*//' -e "s/^(${prefixes})\\|//" || true)"
     if [ -n "$prefixed_feed" ]; then
         feed="$(printf '%s\n%s' "$feed" "$prefixed_feed")"
@@ -194,7 +220,10 @@ main() {
 
     # --- Fetch existing labels --------------------------------------------
     local existing
-    if ! existing="$(gh api "repos/${REPO}/labels?per_page=100" --jq '.[].name' 2>/dev/null)"; then
+    # --paginate: a repo with >100 labels must not hide existing SSOT labels
+    # (POST 422) or prune candidates (#25 R-1). Any page error aborts — never
+    # prune from a partial list.
+    if ! existing="$(gh api --paginate "repos/${REPO}/labels?per_page=100" --jq '.[].name' 2>/dev/null)"; then
         die "could not list labels on ${REPO}. Check network connectivity, repo permissions, or gh auth."
     fi
 
@@ -220,7 +249,7 @@ main() {
             # directly instead of silently skipping it (codex review, PR
             # dEitY719/dotfiles#1229: a failed rename must not mask an out-of-sync label).
             if api_mutate "rename label '${old}' -> '${new}' (sync color/desc)" \
-                "repos/${REPO}/labels/${old}" -X PATCH \
+                "repos/${REPO}/labels/$(uri_encode "$old")" -X PATCH \
                 -f "new_name=${new}" -f "color=${color}" -f "description=${desc}"; then
                 # Reflect in effective set: drop old, add new.
                 effective="$(printf '%s\n' "$effective" | grep -Fxvi -- "$old" || true)"
@@ -233,7 +262,7 @@ main() {
         fi
     done <<<"$alias_feed"
 
-    # --- 2. SSOT 10 + prefixed feeds apply -------------------------------
+    # --- 2. SSOT labels (all feeds) apply -------------------------------
     local name
     while IFS='|' read -r name color desc; do
         [ -z "$name" ] && continue
@@ -242,7 +271,7 @@ main() {
         fi
         if in_set "$name" "$effective"; then
             if api_mutate "PATCH label '${name}' (color=${color})" \
-                "repos/${REPO}/labels/${name}" -X PATCH \
+                "repos/${REPO}/labels/$(uri_encode "$name")" -X PATCH \
                 -f "new_name=${name}" -f "color=${color}" -f "description=${desc}"; then
                 n_synced=$((n_synced + 1))
             else
@@ -277,7 +306,7 @@ main() {
                 continue
             fi
             if api_mutate "DELETE label '${label}' (prune: not in SSOT/alias/allowlist)" \
-                "repos/${REPO}/labels/${label}" -X DELETE; then
+                "repos/${REPO}/labels/$(uri_encode "$label")" -X DELETE; then
                 n_pruned=$((n_pruned + 1))
             else
                 n_failed=$((n_failed + 1))

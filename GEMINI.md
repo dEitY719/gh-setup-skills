@@ -7,7 +7,7 @@ all four.
 
 | Skill | Read | Use when |
 |-------|------|----------|
-| `label-bootstrap` | `@./skills/label-bootstrap/SKILL.md` | Syncing a repo's labels to the 10-label SSOT. Labels only — the board is `kanban-bootstrap`. |
+| `label-bootstrap` | `@./skills/label-bootstrap/SKILL.md` | Syncing a repo's labels to the standard label SSOT. Labels only — the board is `kanban-bootstrap`. |
 | `kanban-bootstrap` | `@./skills/kanban-bootstrap/SKILL.md` | Standing up the Projects v2 kanban board for a repo. Also runs the label step by delegating to `label-bootstrap`. |
 | `docs-bootstrap` | `@./skills/docs-bootstrap/SKILL.md` | Scaffolding the standard kind-split `docs/` tree into an empty or new repo. Never for migrating a populated `docs/`. |
 | `add-ai-metrics` | `@./skills/add-ai-metrics/SKILL.md` | Backfilling the ai-metrics footer onto Issues/PRs that predate automatic capture. New cards get it automatically — this is the gap-filler only. |

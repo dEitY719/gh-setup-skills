@@ -1,6 +1,6 @@
 # gh-setup:label-bootstrap — Help
 
-Sync a GitHub repo's labels to the dotfiles 10-label SSOT
+Sync a GitHub repo's labels to the standard label SSOT
 (`references/gh-labels.md`). Generic and reusable on any repo. Wraps the
 single SSOT script at `lib/label-bootstrap.sh`.
 
@@ -16,30 +16,32 @@ single SSOT script at `lib/label-bootstrap.sh`.
 |---|---|---|
 | `--repo <owner/repo>` | Target repository | auto from `gh repo view` |
 | `--dry-run` | Print the plan (rename/PATCH/POST/prune) without mutations | off |
-| `--prune` | DELETE labels outside SSOT ∪ pipeline ∪ automation ∪ alias-targets ∪ allowlist | off (never deletes) |
+| `--prune` | DELETE labels outside SSOT (every feed) ∪ alias-targets ∪ allowlist | off (never deletes) |
 | `-h`, `--help`, `help` | Show this help | — |
 
 ## What the skill does
 
-1. Parses the plain-feed blocks in `references/gh-labels.md` (10 labels +
-   3 alias renames + 2 `pipeline|`-prefixed labels + 3 `automation|`-prefixed
-   labels) — the one physical SSOT feed. No second hardcoded copy.
+1. Parses the plain-feed blocks in `references/gh-labels.md` (10
+   classification labels + 3 alias renames + every `<prefix>|`-prefixed feed:
+   today `pipeline|` 2, `automation|` 3, `machine|` 3) — the one physical SSOT
+   feed. The prefix list is read from that file too; no second hardcoded copy.
 2. **Alias renames first**: for `bug->fix`, `documentation->docs`,
    `build->chore`, if the old name exists it is renamed via
    `PATCH .../labels/{old} new_name={new}` (color/description synced in the
    same call). Renaming preserves the label on every issue/PR already
    carrying it — delete+recreate would drop it. If the old name is absent,
    the rename is skipped and the new name is created directly (not an error).
-3. **SSOT 10 + prefixed feeds apply**: each of `feat`, `fix`, `docs`, `refactor`,
+3. **SSOT labels apply**: each of `feat`, `fix`, `docs`, `refactor`,
    `test`, `ci`, `chore`, `skill`, `TODO`, `reference` is PATCHed (color +
    description synced) if it exists, or POSTed if it does not. The two
    pipeline-state labels `review-blocked` / `review-passed` (dEitY719/dotfiles#1564) and the
    three automation-exclusion labels `wontfix` / `not-implement` / `manual`
-   (dEitY719/gh-setup-skills#23) join the same loop, with their `pipeline|` /
-   `automation|` prefix stripped. With `TODO` from the 10-label feed, all four
-   "do not auto-process" labels exist after one run.
+   (dEitY719/gh-setup-skills#23) and the three machine labels `home-pc` /
+   `internal-pc` / `external-pc` (dEitY719/gh-setup-skills#25) join the same
+   loop, with their prefix stripped. With `TODO` from the classification feed,
+   all four "do not auto-process" labels exist after one run.
 4. **Prune** (only with `--prune`): labels outside
-   (SSOT 10) ∪ (pipeline 2) ∪ (automation 3) ∪ (alias targets `fix`/`docs`/`chore`) ∪
+   (SSOT, every feed) ∪ (alias targets `fix`/`docs`/`chore`) ∪
    (GitHub default allowlist) are DELETEd. Evaluated AFTER renames, so an alias source like
    `bug` is never a false-positive candidate. Without `--prune` this step
    is skipped entirely — no listing, no deletes.
@@ -68,6 +70,8 @@ to the SSOT spelling via `new_name`) or renamed rather than re-POSTed, and
 - Missing write permission (fork, readonly token) → per-label stderr
   warning, then continue. A single label's failure never aborts the run.
 - `--dry-run` makes zero mutating API calls.
+- Labels are listed with `--paginate` (repos with >100 labels), and names in
+  PATCH/DELETE paths are URL-encoded (`good first issue`, `priority: high`).
 
 ## Prune allowlist (always preserved)
 

@@ -14,3 +14,5 @@ bash skills/add-ai-metrics/tests/shell-common-sibling.sh
 bash skills/kanban-bootstrap/tests/host.sh
 bash skills/label-bootstrap/tests/verdict.sh
 bash skills/label-bootstrap/tests/automation.sh
+bash skills/label-bootstrap/tests/machine.sh
+bash skills/label-bootstrap/tests/pagination-encoding.sh

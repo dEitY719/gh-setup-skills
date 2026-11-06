@@ -1,7 +1,7 @@
 ---
 name: label-bootstrap
 description: >-
-  Sync a GitHub repo's labels to the standard 10-label SSOT. Use for
+  Sync a GitHub repo's labels to the standard label SSOT. Use for
   /gh-setup:label-bootstrap, "라벨 동기화", "SSOT 라벨 적용",
   "sync repo labels". Labels only — the Projects v2 board is
   gh-setup:kanban-bootstrap.
@@ -74,8 +74,8 @@ to apply.`; after a real run, `Next: gh label list --repo <owner/repo>` to
 verify, or `/gh-setup:kanban-bootstrap` to set up the board.
 
 Force-sync semantics (every existing SSOT label is PATCHed unconditionally,
-no skip mode), the 3 alias renames, the `--prune` set algebra, the 2
-pipeline-state and 3 automation-exclusion labels are in `references/help.md`; the label
+no skip mode), the 3 alias renames, the `--prune` set algebra and the
+prefixed feeds (pipeline, automation, machine) are in `references/help.md`; the label
 feed itself is `references/gh-labels.md`.
 
 ## Constraints
@@ -83,14 +83,14 @@ feed itself is `references/gh-labels.md`.
 - Never mutate the script's behavior — wrap, don't rewrite.
 - `--dry-run` must make zero POST/PATCH/DELETE API calls.
 - Never delete a label unless `--prune` was explicitly passed.
-- The 10-label + alias + pipeline + automation SSOT lives only in
+- The label SSOT (every feed, aliases, prefixes) lives only in
   `references/gh-labels.md` — do not hardcode a second copy here or in the
   script.
 - `lib/label-bootstrap.sh` is the sole entry point; invoke it directly
   from non-Claude contexts:
   `bash skills/label-bootstrap/lib/label-bootstrap.sh [...]`.
-- After changing the Summary/verdict logic, run
-  `bash tests/verdict.sh` (fakes `gh`, makes no real API calls).
+- After changing the script, run `bash tests/run.sh` (its `tests/*.sh`
+  fake `gh` via `tests/lib/fake-gh.sh`, no real API calls).
 
 ## Related Skills
 
