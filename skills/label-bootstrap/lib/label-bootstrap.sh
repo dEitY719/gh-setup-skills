@@ -150,7 +150,9 @@ uri_encode() {
 # `manual` (POST would 422, and --prune would DELETE the label we keep).
 in_set() {
     # $1 = needle, $2 = newline-separated haystack
-    printf '%s\n' "$2" | grep -Fxqi -- "$1"
+    # Here-string, not a pipe: with pipefail, `grep -q` exiting early would
+    # SIGPIPE the writer on a large (paginated) haystack and report a miss.
+    grep -Fxqi -- "$1" <<<"$2"
 }
 
 main() {
