@@ -11,7 +11,7 @@ the four skills you run **once, when a repo is new** — not on every commit:
 
 | Skill | Artifact it creates | Role |
 |-------|---------------------|------|
-| `label-bootstrap` | GitHub labels | Force-syncs the 10-label SSOT, renames the 3 alias labels in place, provisions the 2 pipeline-state labels. |
+| `label-bootstrap` | GitHub labels | Force-syncs the standard label SSOT (10 classification labels), renames the 3 alias labels in place, provisions every prefixed feed (pipeline-state, automation-exclusion, machine). |
 | `kanban-bootstrap` | Projects v2 board | Creates the board, links the repo, replaces the Status options with the 6-column workflow, delegates its label step to `label-bootstrap`. |
 | `docs-bootstrap` | `docs/` tree | Scaffolds the 8-leaf kind-split tree plus one policy `README.md`. Empty folders only. |
 | `add-ai-metrics` | Issue/PR bodies | Backfills the `tokens · human-h · ai-min` footer onto cards created before capture was automatic. |
@@ -121,7 +121,7 @@ These are acceptance criteria carried over from dotfiles, not advice:
 
 - **`label-bootstrap` never deletes without `--prune`.** Without that flag the
   prune step is skipped entirely — no listing, no deletes. With it, only labels
-  outside (SSOT 10 ∪ pipeline 2 ∪ alias targets ∪ the GitHub default allowlist)
+  outside (SSOT, every feed ∪ alias targets ∪ the GitHub default allowlist)
   go, and the set is computed **after** the renames so an alias source like
   `bug` is never a false positive. Alias renames use `PATCH new_name=`, never
   delete-then-recreate, so every issue already carrying the label keeps it.
