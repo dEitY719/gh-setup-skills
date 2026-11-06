@@ -141,7 +141,7 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 - `--prune` 는 **기본 off** — 지정하지 않으면 어떤 라벨도 삭제되지
   않는다 (후보 나열 같은 부수효과도 없다). 라벨 삭제는 항상 opt-in 이다.
 - `--prune` 지정 시, 다음 합집합에 **없는** 라벨만 삭제 후보다:
-  (분류 10개) ∪ (**모든 접두어 feed** — 파이프라인 2 · 자동화 제외 3 · 머신 3) ∪ (alias 신규 이름
+  (분류 10개) ∪ (**모든 접두어 feed** — 아래 Plain feed 절의 `<prefix>|` 블록 전부) ∪ (alias 신규 이름
   `fix`/`docs`/`chore`) ∪ (prune allowlist 7종).
 - 파이프라인 라벨은 `--prune` 에서 **항상 보존**된다. 여기서 지워지면
   `gh-verify:review-all` 이 판정을 못 붙이고 (rc 3), 머지 트레인이 모든 PR 을
@@ -158,9 +158,9 @@ GitHub 기본 제공 라벨은 삭제 후보에서 제외한다:
 
 ## Plain feed (스킬이 직접 파싱)
 
-`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 아래 블록들을
-정규식으로 뽑아 쓴다. 표(위)와 값이 어긋나면 안 되므로 이 블록이 유일한
-기계 판독 소스다.
+`gh-setup:label-bootstrap` 의 `lib/label-bootstrap.sh` 가 이 절(다음 `##`
+제목 전까지)의 블록만 정규식으로 뽑아 쓴다 — 다른 절의 예시 행은 파싱되지
+않는다. 표(위)와 값이 어긋나면 안 되므로 이 블록이 유일한 기계 판독 소스다.
 
 feed 는 세 형태로 잡히고 겹치지 않는다 — 분류 feed 는 `name|<6hex>|`, alias
 feed 는 `old|new` (소문자 두 단어), 접두어 feed 는 `<prefix>|name|<6hex>|`
