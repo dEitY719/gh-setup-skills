@@ -107,7 +107,7 @@ point.
   exactly on the limit and `add-ai-metrics` one line under, so any addition to
   those two needs a matching cut.
 - **Description budget.** CI sums every skill description and fails past 5,440
-  characters — Codex's context budget. The current total is 881. Keep new
+  characters — Codex's context budget. The current total is 878. Keep new
   descriptions tight anyway.
 - **`lib/*.sh` is the contract, not a suggestion.** `label-bootstrap.sh`,
   `setup.sh`, and `scaffold.sh` hold the deterministic half of three of these
