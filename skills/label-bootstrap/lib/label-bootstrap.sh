@@ -179,17 +179,14 @@ main() {
     # name is six hex letters (`facade`, `decade`) would otherwise also parse
     # as a bogus `pipeline`/`automation` label with that name as its color.
     #
-    # The prefix list is derived from the SSOT itself (any lowercase word
-    # leading a `prefix|name|<6hex>|` row), so a new feed is one edit to
-    # gh-labels.md — no second list here that --prune could fall out of sync
-    # with (dEitY719/gh-setup-skills#25 F-6).
-    local feed alias_feed prefixed_feed ssot_content prefixes
+    # Any lowercase word leading a `prefix|name|<6hex>|` row is a feed prefix,
+    # so a new feed is one edit to gh-labels.md — no prefix list here that
+    # --prune could fall out of sync with (dEitY719/gh-setup-skills#25 F-6).
+    local feed alias_feed prefixed_feed ssot_content
     local prefixed_re='^[[:space:]]*[a-z]+\|[A-Za-z][A-Za-z0-9_-]*\|[0-9a-fA-F]{6}\|'
     ssot_content="$(tr -d '\r' <"$ssot_file")"
-    prefixes="$(printf '%s\n' "$ssot_content" | grep -E "$prefixed_re" \
-        | sed -E 's/^[[:space:]]*([a-z]+)\|.*/\1/' | sort -u | paste -sd'|' - || true)"
     feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[A-Za-z][A-Za-z0-9]*\|[0-9a-fA-F]{6}\|' \
-        | grep -vE "^[[:space:]]*(${prefixes})\\|" || true)"
+        | grep -vE "$prefixed_re" || true)"
     alias_feed="$(printf '%s\n' "$ssot_content" | grep -E '^[[:space:]]*[a-z]+\|[a-z]+$' || true)"
     [ -n "$feed" ] || die "no label feed found in $ssot_file"
 
@@ -208,7 +205,7 @@ main() {
     # Machine labels (home-pc / internal-pc / external-pc, #25) follow suit.
     prefixed_feed="$(printf '%s\n' "$ssot_content" \
         | grep -E "$prefixed_re" \
-        | sed -E -e 's/^[[:space:]]*//' -e "s/^(${prefixes})\\|//" || true)"
+        | sed -E 's/^[[:space:]]*[a-z]+\|//' || true)"
     if [ -n "$prefixed_feed" ]; then
         feed="$(printf '%s\n%s' "$feed" "$prefixed_feed")"
     fi
