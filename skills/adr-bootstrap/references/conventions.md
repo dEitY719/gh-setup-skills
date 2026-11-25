@@ -28,7 +28,11 @@ That repo had three duplicate-number accidents: 0002, 0019 and 0034 each
 appeared twice. Parallel branches each picked "the next number" by hand and
 then merged. Nothing checked for it. So:
 
-- `new` and `supersede` always use highest existing + 1.
+- `new` and `supersede` always use highest existing + 1, so nobody picks a
+  number by hand.
+- That alone does not stop two branches from each taking the same next
+  number. Run `--check` before merging an ADR branch (or in CI): finding 1
+  catches the collision while it is still cheap to renumber.
 - `--check` finding 1 reports duplicates. The self-test pins this with a
   synthetic duplicate fixture.
 - Fixing a duplicate is a human decision (which one renumbers, which links to
