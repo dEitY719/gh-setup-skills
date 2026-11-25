@@ -457,6 +457,11 @@ self_test() {
     run "$ST/full" new --apply "API 는 REST 를 쓴다" --slug api-uses-rest || bad "--slug failed"
     grep -qx '# API 는 REST 를 쓴다' "$ST/full/docs/adr/0045-api-uses-rest.md" || bad "Korean title not kept in body"
     if run "$ST/full" new; then bad "new without title accepted"; fi
+    # Titles reach awk via the prefix-assignment environment (POSIX exports it to
+    # the command); backslashes and & must come out verbatim, never escape-processed.
+    run "$ST/full" new 'Keep a\tb & c\\d' --slug meta-title --apply || bad "metachar title failed"
+    head -n 1 "$ST/full/docs/adr/0046-meta-title.md" | grep -qxF '# Keep a\tb & c\\d' || bad "title not passed verbatim through ENVIRON"
+    rm -f "$ST/full/docs/adr/0046-meta-title.md"
     ok
 
     # --lang: ko skeleton vs MADR skeleton.
