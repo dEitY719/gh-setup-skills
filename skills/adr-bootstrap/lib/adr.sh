@@ -63,7 +63,7 @@ SAW_TARGET=false
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
-    -h | --help | help) MODE="help" ;;
+    -h | --help) MODE="help" ;;
     --self-test) MODE="self-test" ;;
     --check) CHECK=true ;;
     --apply) APPLY=true ;;
@@ -83,7 +83,10 @@ while [ "$#" -gt 0 ]; do
     --slug=*) SLUG="${1#--slug=}" ;;
     -*) die "Unknown option: $1 (try --help)" ;;
     *)
-        if [ -z "$MODE" ] && { [ "$1" = scaffold ] || [ "$1" = new ] || [ "$1" = supersede ]; }; then
+        # bare "help" is a mode only as arg #1, so a title or ref "help" stays data
+        if [ -z "$MODE" ] && ! $SAW_TARGET && [ "$1" = help ]; then
+            MODE="help"
+        elif [ -z "$MODE" ] && { [ "$1" = scaffold ] || [ "$1" = new ] || [ "$1" = supersede ]; }; then
             MODE="$1"
         elif [ "$MODE" = new ] && [ -z "$TITLE" ]; then
             TITLE="$1"
@@ -120,7 +123,7 @@ strip_zeros() {
 # Highest NNNN- prefix + 1. Non-NNNN files never count (they are --check findings).
 next_number() {
     _max=0
-    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-*.md; do
+    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-?*.md; do
         [ -f "$_f" ] || continue
         _n=$(basename -- "$_f")
         _n=$(strip_zeros "${_n%%-*}")
@@ -158,9 +161,9 @@ render() {
 emit() {
     if $APPLY; then
         cat >"$1" || die "write failed: $1"
-        log_plan "create" "$2"
+        log_plan "${3:-create}" "$2"
     else
-        log_plan "create" "$2"
+        log_plan "${3:-create}" "$2"
         printf -- '----- %s -----\n' "$2"
         cat
         printf -- '----- end %s -----\n' "$2"
@@ -172,7 +175,7 @@ status_heading_line() {
 }
 
 status_section() {
-    awk 'f && /^## / { exit } f { print } /^## (상태|Status)[ \t]*$/ { f = 1 }' "$1"
+    awk 'f && /^## / { exit } f { print } /^## (상태|Status)[ \t\r]*$/ { f = 1 }' "$1"
 }
 
 finish() {
@@ -195,11 +198,15 @@ do_scaffold() {
         _dst=${_pair%%:*}
         _src="$REF_DIR/${_pair#*:}"
         [ -r "$_src" ] || die "reference not found: $_src"
-        if [ -e "$ADR_DIR/$_dst" ] && ! $FORCE; then
-            log_plan "skip  " "docs/adr/$_dst (exists -- use --force to overwrite)"
-            continue
+        _verb=create
+        if [ -e "$ADR_DIR/$_dst" ]; then
+            if ! $FORCE; then
+                log_plan "skip  " "docs/adr/$_dst (exists -- use --force to overwrite)"
+                continue
+            fi
+            _verb=overwrite
         fi
-        emit "$ADR_DIR/$_dst" "docs/adr/$_dst" <"$_src"
+        emit "$ADR_DIR/$_dst" "docs/adr/$_dst" "$_verb" <"$_src"
     done
     finish "docs/adr/ is ready. Next: git add docs/adr && git commit -m \"docs(adr): bootstrap ADR records\""
 }
@@ -224,7 +231,7 @@ do_new() {
 
 list_candidates() {
     printf 'Candidates in docs/adr/:\n'
-    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-*.md; do
+    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-?*.md; do
         [ -f "$_f" ] && printf '  %s\n' "$(basename -- "$_f")"
     done
     return 0
@@ -234,7 +241,7 @@ resolve_old() {
     OLD_FILE=""
     case "$OLD_REF" in
     "" | *[!0-9]*)
-        for _c in "$OLD_REF" "$ADR_DIR/$OLD_REF"; do
+        for _c in "$ADR_DIR/$OLD_REF" "$OLD_REF"; do
             if [ -n "$OLD_REF" ] && [ -f "$_c" ]; then
                 OLD_FILE="$_c"
                 break
@@ -243,11 +250,14 @@ resolve_old() {
         if [ -n "$OLD_FILE" ] && ! basename -- "$OLD_FILE" | grep -Eq '^[0-9]{4}-.+\.md$'; then
             die "Not an NNNN-*.md ADR: $OLD_REF"
         fi
+        if [ -n "$OLD_FILE" ] && [ "$(CDPATH='' cd -- "$(dirname -- "$OLD_FILE")" && pwd -P)" != "$(CDPATH='' cd -- "$ADR_DIR" && pwd -P)" ]; then
+            die "Not inside $ADR_DIR: $OLD_REF -- nothing written"
+        fi
         ;;
     *)
         _p=$(printf '%04d' "$(strip_zeros "$OLD_REF")")
         _hits=0
-        for _f in "$ADR_DIR/$_p"-*.md; do
+        for _f in "$ADR_DIR/$_p"-?*.md; do
             [ -f "$_f" ] || continue
             _hits=$((_hits + 1))
             OLD_FILE="$_f"
@@ -292,9 +302,17 @@ do_supersede() {
     log_plan "modify" "docs/adr/$_ob (+1 line after line $_at, nothing else): $_old_line"
     if $APPLY; then
         _tmp="$OLD_FILE.adr-bootstrap.$$"
-        ADR_L="$_old_line" awk -v at="$_at" '{ print } NR == at { print ENVIRON["ADR_L"] }' "$OLD_FILE" >"$_tmp" ||
+        # head/tail keep every other byte, including a missing final newline
+        {
+            head -n "$_at" "$OLD_FILE"
+            [ -z "$(head -n "$_at" "$OLD_FILE" | tail -c 1)" ] || printf '\n'
+            printf '%s\n' "$_old_line"
+            tail -n "+$((_at + 1))" "$OLD_FILE"
+        } >"$_tmp" || {
+            rm -f "$_tmp"
             die "rewrite failed: $OLD_FILE"
-        cat "$_tmp" >"$OLD_FILE" || die "write failed: $OLD_FILE"
+        }
+        cat "$_tmp" >"$OLD_FILE" || die "write failed: $OLD_FILE (intended content left in $_tmp)"
         rm -f "$_tmp"
     fi
     finish "Created docs/adr/$NEW_FILE and marked docs/adr/$_ob superseded."
@@ -310,7 +328,7 @@ do_check() {
     }
 
     _nums=""
-    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-*.md; do
+    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-?*.md; do
         [ -f "$_f" ] || continue
         _b=$(basename -- "$_f")
         _nums="$_nums${_b%%-*}
@@ -329,7 +347,7 @@ do_check() {
         fi
     done
 
-    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-*.md; do
+    for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-?*.md; do
         [ -f "$_f" ] || continue
         _b=$(basename -- "$_f")
         if [ -z "$(status_heading_line "$_f")" ]; then
@@ -337,7 +355,7 @@ do_check() {
         elif ! status_section "$_f" | grep -q 'Accepted'; then
             finding "status section has no Accepted line: $_b"
         fi
-        _refs=$(grep -E '대체됨|Superseded by' "$_f" | sed -E 's/[0-9]{4}-[0-9]{2}-[0-9]{2}//g' | grep -oE '[0-9]{4}' || true)
+        _refs=$(status_section "$_f" | grep -oE '[0-9]{4} 로 대체됨|Superseded by [0-9]{4}' | grep -oE '[0-9]{4}' || true)
         for _r in $_refs; do
             _ok=false
             for _t in "$ADR_DIR/$_r"-*.md; do [ -f "$_t" ] && _ok=true; done
@@ -425,10 +443,19 @@ self_test() {
     if run "$ST/full" supersede 0099 "Nope" --apply; then bad "missing supersede target accepted"; fi
     grep -q 'Candidates' "$ST/out" || bad "no candidates listed"
     [ "$(ls "$ST/full/docs/adr" | wc -l)" -eq "$_before" ] || bad "failed supersede wrote a file"
+    mkdir -p "$ST/other"
+    printf '# X\n\n## 상태\nAccepted — 2025-01-01.\n' >"$ST/other/0001-x.md"
+    if run "$ST/full" supersede "$ST/other/0001-x.md" "Nope" --apply; then bad "supersede outside docs/adr accepted"; fi
+    # no trailing newline after a later section: only the one line may change
+    printf '# N\n\n## 상태\nAccepted — 2025-01-01.\n\n## 결정\nx' >"$ST/full/docs/adr/0090-n.md"
+    cp "$ST/full/docs/adr/0090-n.md" "$ST/orig"
+    run "$ST/full" supersede 90 "Next N" --apply || bad "supersede on no-EOL file failed"
+    [ "$(tail -c 1 "$ST/full/docs/adr/0090-n.md")" = x ] || bad "supersede added a final newline"
     ok
 
     # --check: clean repo passes; fixture with all four defects fails on each.
-    run "$ST/full" --check || bad "--check failed on a clean repo"
+    printf '# R\r\n\r\n## Status\r\nAccepted — 2025-01-01. Superseded by the 2024 plan.\r\n' >"$ST/full/docs/adr/0095-crlf.md"
+    run "$ST/full" --check || bad "--check failed on a clean repo (CRLF / prose year)"
     mkdir -p "$ST/bad/docs/adr"
     printf '# A\n\n## 상태\nAccepted — 2025-01-01.\n0099 로 대체됨 — 2025-02-01.\n' >"$ST/bad/docs/adr/0002-a.md"
     printf '# B\n\n## 상태\nAccepted — 2025-01-01.\n' >"$ST/bad/docs/adr/0002-b.md"

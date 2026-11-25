@@ -1,7 +1,7 @@
 {
   "name": "gh-setup",
   "version": "0.1.8",
-  "description": "One-time GitHub repo initialization: label SSOT sync, Projects v2 kanban board, docs/ tree scaffold, and ai-metrics footer backfill.",
+  "description": "One-time GitHub repo initialization: label SSOT sync, Projects v2 kanban board, docs/ tree scaffold, ADR records, and ai-metrics footer backfill.",
   "author": {
     "name": "dEitY719",
     "url": "https://github.com/dEitY719"

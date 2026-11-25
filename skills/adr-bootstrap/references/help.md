@@ -51,7 +51,8 @@ section. Nothing else in the old file changes.
 2. A `.md` file whose name does not match `NNNN-<slug>.md` (`README.md` and
    `NNNN-template.md` excepted). It is excluded from numbering, never deleted.
 3. No status section, or a status section without `Accepted`.
-4. A `대체됨` / `Superseded by` line whose number has no matching file.
+4. A `NNNN 로 대체됨` / `Superseded by NNNN` line in the status section whose
+   number has no matching file.
 
 ## Testing
 
