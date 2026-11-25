@@ -6,7 +6,7 @@
 - An authenticated `gh` CLI with write access to the repo you are bootstrapping
 - For `kanban-bootstrap`: the `project` token scope
   (`gh auth refresh -h <host> -s project`) and `jq`
-- `docs-bootstrap` needs neither — a shell and a writable directory is enough
+- `docs-bootstrap` and `adr-bootstrap` need neither — a shell and a writable directory is enough
 
 ## Installation
 
@@ -20,7 +20,7 @@ project-level):
 ```
 
 Restart OpenCode. The plugin installs through OpenCode's plugin manager and
-registers all four skills.
+registers all five skills.
 
 OpenCode uses its own plugin install. If you also use Claude Code, Codex, or
 another harness, install this plugin separately for each one.
@@ -75,6 +75,9 @@ Two things to know here:
 - `docs-bootstrap` is dry-run by default, writes only on `--apply`, never
   migrates a populated `docs/`, and never overwrites `docs/README.md` without
   `--force`.
+- `adr-bootstrap` is dry-run by default and writes only on `--apply`. New ADR
+  numbers are highest existing + 1; `supersede` adds one line to the old ADR's
+  status section and nothing else.
 - `add-ai-metrics` is idempotent — it skips a card that already has an
   `<!-- ai-metrics -->` block and never modifies bytes outside that block.
 

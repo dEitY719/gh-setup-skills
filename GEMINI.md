@@ -1,19 +1,20 @@
 # gh-setup — skill index
 
-Four one-time repo-initialization skills. Each lives in this extension's
+Five one-time repo-initialization skills. Each lives in this extension's
 `skills/` directory. They are explicitly invoked, never ambient: load the one
 that matches the request by reading its `SKILL.md`, then follow it. Do not load
-all four.
+all five.
 
 | Skill | Read | Use when |
 |-------|------|----------|
 | `label-bootstrap` | `@./skills/label-bootstrap/SKILL.md` | Syncing a repo's labels to the standard label SSOT. Labels only — the board is `kanban-bootstrap`. |
 | `kanban-bootstrap` | `@./skills/kanban-bootstrap/SKILL.md` | Standing up the Projects v2 kanban board for a repo. Also runs the label step by delegating to `label-bootstrap`. |
 | `docs-bootstrap` | `@./skills/docs-bootstrap/SKILL.md` | Scaffolding the standard kind-split `docs/` tree into an empty or new repo. Never for migrating a populated `docs/`. |
+| `adr-bootstrap` | `@./skills/adr-bootstrap/SKILL.md` | Installing or using an ADR system in `docs/adr/`: rules README and template, numbering a new ADR, superseding one, or auditing with `--check`. |
 | `add-ai-metrics` | `@./skills/add-ai-metrics/SKILL.md` | Backfilling the ai-metrics footer onto Issues/PRs that predate automatic capture. New cards get it automatically — this is the gap-filler only. |
 
 Each skill's `references/` directory holds the detail it loads on demand, and
-three of the four keep their deterministic steps in `lib/*.sh`. `SKILL.md` says
+four of the five keep their deterministic steps in `lib/*.sh`. `SKILL.md` says
 which file to read and which script to run, and when. Do not read `references/`
 up front, and do not reimplement `lib/` in prose.
 
@@ -27,7 +28,7 @@ up front, and do not reimplement `lib/` in prose.
   (`gh auth refresh -h <host> -s project`) and `jq`. It always targets `origin`,
   derives `$HOST` from that remote's URL, and carries `GH_HOST` on every call:
   `--repo` alone names no server.
-- **`docs-bootstrap`** — nothing but a shell and a writable directory. No
+- **`docs-bootstrap`, `adr-bootstrap`** — nothing but a shell and a writable directory. No
   network, no `gh`. Its `--help` path does not touch the filesystem at all.
 
 ## Tool mapping for Gemini CLI
@@ -79,6 +80,9 @@ On Antigravity read `antigravity-tools.md` in that same directory instead —
 - `docs-bootstrap` is `--dry-run` by default and writes only on `--apply`. It
   never migrates a populated `docs/`, never authors document bodies beyond
   `docs/README.md`, and never overwrites that README without `--force`.
+- `adr-bootstrap` is dry-run by default and writes only on `--apply`. New ADR
+  numbers are highest existing + 1. `supersede` adds one line to the old ADR's
+  status section and nothing else. `--check` is read-only.
 - `add-ai-metrics` is idempotent: skip any card already carrying an
   `<!-- ai-metrics -->` block, and leave every byte outside that block
   untouched. Always pass `--repo`. A per-card failure is logged and the loop

@@ -1,12 +1,12 @@
 """Hermes Agent registration for the `gh-setup` skills plugin.
 
-Registers the four one-time repo-initialization skills with Hermes' native
+Registers the five one-time repo-initialization skills with Hermes' native
 skill loader so `skill_view("gh-setup:<name>")` can load them on demand.
 
 Unlike superpowers, this plugin injects no session bootstrap context: these
 skills run once, when a repo is new, and are always explicitly invoked. Paying
 for a bootstrap preamble on every first turn would buy nothing, and three of the
-four mutate a live GitHub repo, which is not something a preamble should nudge
+five mutate a live GitHub repo, which is not something a preamble should nudge
 a model toward.
 """
 

@@ -11,6 +11,7 @@ cd -- "$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
 bash skills/add-ai-metrics/lib/ai-metrics.sh --self-test
 bash skills/add-ai-metrics/tests/shell-common-sibling.sh
+sh skills/adr-bootstrap/lib/adr.sh --self-test
 bash skills/kanban-bootstrap/tests/host.sh
 bash skills/label-bootstrap/tests/verdict.sh
 bash skills/label-bootstrap/tests/automation.sh
