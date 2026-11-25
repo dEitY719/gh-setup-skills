@@ -159,23 +159,25 @@ render() {
 
 # stdin -> file on --apply; otherwise print the full planned content.
 emit() {
+    log_plan "${3:-create}" "$2"
     if $APPLY; then
         cat >"$1" || die "write failed: $1"
-        log_plan "${3:-create}" "$2"
     else
-        log_plan "${3:-create}" "$2"
         printf -- '----- %s -----\n' "$2"
         cat
         printf -- '----- end %s -----\n' "$2"
     fi
 }
 
+# One heading pattern for both readers, so they cannot drift apart.
+STATUS_RE='^## (상태|Status)[ \t\r]*$'
+
 status_heading_line() {
-    grep -nE '^## (상태|Status)[[:space:]]*$' "$1" | head -n 1 | cut -d: -f1
+    awk -v re="$STATUS_RE" '$0 ~ re { print NR; exit }' "$1"
 }
 
 status_section() {
-    awk 'f && /^## / { exit } f { print } /^## (상태|Status)[ \t\r]*$/ { f = 1 }' "$1"
+    awk -v re="$STATUS_RE" 'f && /^## / { exit } f { print } $0 ~ re { f = 1 }' "$1"
 }
 
 finish() {
@@ -240,9 +242,9 @@ list_candidates() {
 resolve_old() {
     OLD_FILE=""
     case "$OLD_REF" in
-    "" | *[!0-9]*)
+    *[!0-9]*)
         for _c in "$ADR_DIR/$OLD_REF" "$OLD_REF"; do
-            if [ -n "$OLD_REF" ] && [ -f "$_c" ]; then
+            if [ -f "$_c" ]; then
                 OLD_FILE="$_c"
                 break
             fi
@@ -350,12 +352,13 @@ do_check() {
     for _f in "$ADR_DIR"/[0-9][0-9][0-9][0-9]-?*.md; do
         [ -f "$_f" ] || continue
         _b=$(basename -- "$_f")
+        _sec=$(status_section "$_f")
         if [ -z "$(status_heading_line "$_f")" ]; then
             finding "no status section (## 상태 / ## Status): $_b"
-        elif ! status_section "$_f" | grep -q 'Accepted'; then
+        elif ! printf '%s\n' "$_sec" | grep -q 'Accepted'; then
             finding "status section has no Accepted line: $_b"
         fi
-        _refs=$(status_section "$_f" | grep -oE '[0-9]{4} 로 대체됨|Superseded by [0-9]{4}' | grep -oE '[0-9]{4}' || true)
+        _refs=$(printf '%s\n' "$_sec" | grep -oE '[0-9]{4} 로 대체됨|Superseded by [0-9]{4}' | grep -oE '[0-9]{4}' || true)
         for _r in $_refs; do
             _ok=false
             for _t in "$ADR_DIR/$_r"-*.md; do [ -f "$_t" ] && _ok=true; done
