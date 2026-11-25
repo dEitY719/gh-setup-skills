@@ -7,16 +7,17 @@ text. Edit `CLAUDE.md`; never replace the symlink with a second copy.
 ## What this repo is
 
 A single-plugin skill marketplace. The plugin is named `gh-setup` and it bundles
-the four skills you run **once, when a repo is new** — not on every commit:
+the five skills you run **once, when a repo is new** — not on every commit:
 
 | Skill | Artifact it creates | Role |
 |-------|---------------------|------|
 | `label-bootstrap` | GitHub labels | Force-syncs the standard label SSOT (10 classification labels), renames the 3 alias labels in place, provisions every prefixed feed (pipeline-state, automation-exclusion, machine). |
 | `kanban-bootstrap` | Projects v2 board | Creates the board, links the repo, replaces the Status options with the 6-column workflow, delegates its label step to `label-bootstrap`. |
 | `docs-bootstrap` | `docs/` tree | Scaffolds the 8-leaf kind-split tree plus one policy `README.md`. Empty folders only. |
+| `adr-bootstrap` | `docs/adr/` records | Writes the ADR rules README and template, numbers new ADRs (highest + 1), records supersession, audits with `--check`. |
 | `add-ai-metrics` | Issue/PR bodies | Backfills the `tokens · human-h · ai-min` footer onto cards created before capture was automatic. |
 
-Three of the four write to a live GitHub repo that already has issues, PRs, and
+Three of the five write to a live GitHub repo that already has issues, PRs, and
 labels attached to them. That is why every safety contract below is a hard rule
 rather than a preference: a bad label prune or a rewritten issue body is not
 something the user can undo from the CLI.
@@ -94,7 +95,7 @@ point.
   `gh-pr:merge-train`, `gh:pr-resolve-conflict` → `gh-resolve:conflict`,
   `gh:pr-resolve-ci-fail` → `gh-resolve:ci-fail`, `devx:pr-review-all` →
   `gh-verify:review-all`. Verify a name against that repo's
-  `.claude-plugin/plugin.json` + `skills/<dir>/` before citing it; only the four
+  `.claude-plugin/plugin.json` + `skills/<dir>/` before citing it; only the five
   siblings inside `skills/` take the `gh-setup:` prefix. The one exception is
   the `<!-- ai-metrics:gh-pr -->` / `<!-- ai-metrics:gh-add-ai-metrics -->`
   footer markers — those are an interop wire format shared with the skills
@@ -107,11 +108,11 @@ point.
   exactly on the limit and `add-ai-metrics` one line under, so any addition to
   those two needs a matching cut.
 - **Description budget.** CI sums every skill description and fails past 5,440
-  characters — Codex's context budget. The current total is 878. Keep new
+  characters — Codex's context budget. The current total is about 1,080. Keep new
   descriptions tight anyway.
 - **`lib/*.sh` is the contract, not a suggestion.** `label-bootstrap.sh`,
-  `setup.sh`, and `scaffold.sh` hold the deterministic half of three of these
-  skills. Wrap them, do not rewrite them: surface their `[OK]` / `[FAIL]` lines
+  `setup.sh`, `scaffold.sh`, and `adr.sh` hold the deterministic half of four of
+  these skills. Wrap them, do not rewrite them: surface their `[OK]` / `[FAIL]` lines
   and their dry-run plans verbatim, and never swallow a warning to keep an exit
   code clean. CI shellchecks them at `--severity=warning`.
 
@@ -139,6 +140,11 @@ These are acceptance criteria carried over from dotfiles, not advice:
   scaffolds; it never migrates a populated `docs/`, never authors document
   bodies beyond `docs/README.md`, and never overwrites that README without
   `--force`.
+- **`adr-bootstrap` defaults to dry-run** and writes only on `--apply`. It
+  numbers ADRs as highest existing + 1, never by hand. `supersede` adds exactly
+  one line to the old ADR's status section and touches nothing else there.
+  It never authors ADR bodies, never overwrites `docs/adr/README.md` or
+  `NNNN-template.md` without `--force`, and `--check` is read-only.
 - **`add-ai-metrics` is a backfill and must stay idempotent.** A card already
   carrying an `<!-- ai-metrics -->` block is skipped, and bytes outside that
   block are never modified. Always pass `--repo`. `--force` recomputes the
@@ -148,7 +154,7 @@ These are acceptance criteria carried over from dotfiles, not advice:
 
 ## Harness portability
 
-These four are unusually portable: they are `gh` CLI calls, `lib/*.sh` scripts,
+These five are unusually portable: they are `gh` CLI calls, `lib/*.sh` scripts,
 and file writes. None of them uses `WebFetch` or depends on `AskUserQuestion`.
 `kanban-bootstrap` delegates its label step to `gh-setup:label-bootstrap` **by
 skill name**, never by a `../` path (a single-skill install has no sibling

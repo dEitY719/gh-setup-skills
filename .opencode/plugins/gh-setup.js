@@ -6,7 +6,7 @@
  * Unlike superpowers, this plugin injects no per-session bootstrap context.
  * These are one-time repo-initialization skills — you reach for them when
  * standing up a new repo, not on every commit — so OpenCode's native `skill`
- * tool discovering them is all that is needed. Three of the four mutate a live
+ * tool discovering them is all that is needed. Three of the five mutate a live
  * GitHub repo, which is a further reason not to keep them in the preamble.
  */
 

@@ -1,0 +1,52 @@
+[
+  {
+    "query": "이 저장소에 ADR 체계 좀 깔아줘. docs/adr 에 규칙 문서랑 템플릿까지",
+    "should_trigger": true
+  },
+  {
+    "query": "방금 정한 거, 설정은 YAML 한 파일에 둔다는 결정으로 새 ADR 만들어줘",
+    "should_trigger": true
+  },
+  {
+    "query": "set up architecture decision records in this repo so we can start writing them",
+    "should_trigger": true
+  },
+  {
+    "query": "ADR 0030 을 새 결정으로 대체하는 ADR 써줘. 옛 거에 대체 표시도 남기고",
+    "should_trigger": true
+  },
+  {
+    "query": "check our docs/adr folder for duplicate ADR numbers and broken superseded links",
+    "should_trigger": true
+  },
+  {
+    "query": "add an ADR saying we use Postgres instead of MySQL",
+    "should_trigger": true
+  },
+  {
+    "query": "/gh-setup:adr-bootstrap new \"API 는 REST 를 쓴다\"",
+    "should_trigger": true,
+    "note": "slash-literal: update if the skill is renamed"
+  },
+  {
+    "query": "빈 repo 에 docs 폴더 골격 전체를 만들어줘",
+    "should_trigger": false,
+    "note": "whole docs/ tree is docs-bootstrap"
+  },
+  {
+    "query": "sync this repo's labels to the standard set",
+    "should_trigger": false
+  },
+  {
+    "query": "이 PR 의 아키텍처 결정이 맞는지 리뷰해줘",
+    "should_trigger": false
+  },
+  {
+    "query": "write the PRD for the new billing feature",
+    "should_trigger": false
+  },
+  {
+    "query": "README 에 설치 방법 섹션 추가해줘",
+    "should_trigger": false
+  }
+]

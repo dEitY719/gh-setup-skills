@@ -1,9 +1,9 @@
 # gh-setup-skills
 
-Four skills for one-time GitHub repo initialization — the ones you run once,
+Five skills for one-time GitHub repo initialization — the ones you run once,
 when standing up a new repo, rather than on every commit. Sync its labels to the
 standard label SSOT, create and wire the Projects v2 kanban board, scaffold the
-standard `docs/` tree, and backfill the ai-metrics footer onto cards that
+standard `docs/` tree, install an ADR system in `docs/adr/`, and backfill the ai-metrics footer onto cards that
 predate automatic capture. Packaged as a single plugin named `gh-setup`,
 installable on six coding-agent harnesses.
 
@@ -18,6 +18,7 @@ this repo owns no shared assets — it links out for the
 | `label-bootstrap` | `/gh-setup:label-bootstrap [--repo <owner/repo>] [--dry-run] [--prune]` | Force-syncs the standard label SSOT's colors and descriptions onto a repo, renames the 3 alias labels (`bug`->`fix`, `documentation`->`docs`, `build`->`chore`) in place so existing issues keep them, and provisions the 2 pipeline-state labels plus the 3 automation-exclusion labels (`wontfix`, `not-implement`, `manual`) and the 3 machine labels (`home-pc`, `internal-pc`, `external-pc`). Deletes nothing unless `--prune`. |
 | `kanban-bootstrap` | `/gh-setup:kanban-bootstrap [--owner <login>] [--repo <name>] [options]` | Creates the Projects v2 board, links the repo, replaces the Status options with the 6-column workflow, sets the auto-archive window, and prints the remaining UI checklist. Delegates its label step to `label-bootstrap`. |
 | `docs-bootstrap` | `/gh-setup:docs-bootstrap [path] [--check\|--apply\|--dry-run] [--force]` | Scaffolds the 8-leaf kind-split `docs/` tree (`adr`, `product`, `design`, `architecture/{system,features}`, `testing`, `guides`, `public`), a `.gitkeep` per leaf, and one policy `docs/README.md`. Dry-run by default. |
+| `adr-bootstrap` | `/gh-setup:adr-bootstrap [path] [scaffold\|new "<title>"\|supersede <ref> "<title>"\|--check] [--apply] [--lang ko\|en]` | Fills the empty `docs/adr/` that `docs-bootstrap` creates (or none, or a populated one): a rules `README.md` and a template, then `new` numbers the next ADR as highest + 1, `supersede` records the replacement in the old ADR's status section with one line, and `--check` reports duplicate numbers, bad names, missing status and broken supersede references. Dry-run by default. |
 | `add-ai-metrics` | `/gh-setup:add-ai-metrics [<targets>] [--type issue\|PR] [--date <d>] [--pace] [--limit] [--budget] [--dry-run]` | Retrofits the `tokens · human-h · ai-min` footer onto Issues/PRs created before capture was automatic. Idempotent — a card that already has the block is skipped, and bytes outside it are never touched. |
 
 `kanban-bootstrap` and `label-bootstrap` are a pair: the board skill invokes the
@@ -46,6 +47,7 @@ Each page is generated from a Markdown source under
 | `label-bootstrap` | An authenticated `gh` CLI with write access to the target repo. Repo resolves from `--repo`, else `gh repo view`. Missing write permission warns per label and continues rather than aborting. |
 | `kanban-bootstrap` | `gh` CLI with the **`project` token scope** (`gh auth refresh -h <host> -s project`) plus `jq`. Always targets `origin`; `$HOST` is derived from `origin`'s URL and carried on every call as `GH_HOST`, because `--repo` alone names no server. |
 | `docs-bootstrap` | Nothing but a shell and a writable target directory. No network, no `gh`. `--help` does not even touch the filesystem. |
+| `adr-bootstrap` | Same as `docs-bootstrap`: a POSIX shell and a writable target directory. No network, no `gh`, no git. |
 | `add-ai-metrics` | An authenticated `gh` CLI with write access. Resolves the target repo from the git remote; a missing remote is a stop, never a silent fallback. |
 
 ## Install
@@ -103,6 +105,7 @@ read the one file for the harness you are on.
 | `label-bootstrap` | full | full | full | full | full | full |
 | `kanban-bootstrap` | full | full, confirm in chat | full | full on Gemini, confirm in chat on Antigravity | full, confirm in chat | full, confirm in chat |
 | `docs-bootstrap` | full | full | full | full | full | full |
+| `adr-bootstrap` | full | full | full | full | full | full |
 | `add-ai-metrics` | full | full, confirm in chat | full | full on Gemini, confirm in chat on Antigravity | full, confirm in chat | full, confirm in chat |
 
 *confirm in chat* — two steps ask a question before proceeding:
@@ -114,14 +117,15 @@ before touching more than 100 cards. Kimi (`AskUserQuestion`) and Gemini CLI
 OpenCode do not, so ask in the conversation and wait for a real reply. An
 auto-approve session setting is not the user's answer.
 
-The `lib/*.sh` helpers under `label-bootstrap`, `kanban-bootstrap`, and
-`docs-bootstrap` are plain bash with no external UX library, and run identically
+The `lib/*.sh` helpers under `label-bootstrap`, `kanban-bootstrap`,
+`docs-bootstrap`, and `adr-bootstrap` (POSIX sh) are plain shell with no external UX library, and run identically
 on every harness. Call them; do not reimplement them. `scaffold.sh` is
 deliberately copy-paste safe — it can be run straight from a checkout without
 the plugin installed at all:
 
 ```
 bash skills/docs-bootstrap/lib/scaffold.sh ~/code/my-new-service --apply
+sh skills/adr-bootstrap/lib/adr.sh ~/code/my-new-service --apply
 bash skills/label-bootstrap/lib/label-bootstrap.sh --repo owner/repo --dry-run
 ```
 
@@ -147,7 +151,7 @@ Manifests live at the repo root and all point at one flat `skills/` directory:
 
 ```
 .
-├── skills/{label-bootstrap,kanban-bootstrap,docs-bootstrap,add-ai-metrics}/
+├── skills/{label-bootstrap,kanban-bootstrap,docs-bootstrap,adr-bootstrap,add-ai-metrics}/
 │   ├── SKILL.md
 │   ├── references/
 │   └── lib/                                     (add-ai-metrics has none)
