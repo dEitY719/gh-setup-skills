@@ -56,6 +56,7 @@ CHECK=false
 APPLY=false
 FORCE=false
 ADR_LANG="ko"
+LANG_SET=false
 SLUG=""
 TITLE=""
 OLD_REF=""
@@ -73,8 +74,12 @@ while [ "$#" -gt 0 ]; do
         [ "$#" -ge 2 ] || die "--lang needs ko or en"
         shift
         ADR_LANG="$1"
+        LANG_SET=true
         ;;
-    --lang=*) ADR_LANG="${1#--lang=}" ;;
+    --lang=*)
+        ADR_LANG="${1#--lang=}"
+        LANG_SET=true
+        ;;
     --slug)
         [ "$#" -ge 2 ] || die "--slug needs a value"
         shift
@@ -108,7 +113,11 @@ done
 
 case "$ADR_LANG" in ko | en) ;; *) die "--lang must be ko or en, got: $ADR_LANG" ;; esac
 if [ "$MODE" != help ] && [ "$MODE" != self-test ]; then
-    $CHECK && MODE="check"
+    if $CHECK; then
+        # --check is read-only; silently dropping a write request would surprise the user.
+        { [ -z "$MODE" ] && ! $APPLY; } || die "--check is read-only: do not combine it with a mode or --apply"
+        MODE="check"
+    fi
     [ -n "$MODE" ] || MODE="scaffold"
 fi
 
@@ -129,6 +138,7 @@ next_number() {
         _n=$(strip_zeros "${_n%%-*}")
         if [ "$_n" -gt "$_max" ]; then _max=$_n; fi
     done
+    [ "$_max" -lt 9999 ] || die "ADR numbers are exhausted at 9999 (NNNN- is four digits)"
     printf '%04d' $((_max + 1))
 }
 
@@ -145,8 +155,15 @@ resolve_slug() {
     fi
 }
 
+# The repo's own docs/adr/NNNN-template.md wins unless --lang was given, so a
+# customised template is honoured and its language (## Status = en) carries over.
 require_template() {
-    [ -r "$REF_DIR/template-$ADR_LANG.md" ] || die "template not found: $REF_DIR/template-$ADR_LANG.md"
+    TEMPLATE="$REF_DIR/template-$ADR_LANG.md"
+    if ! $LANG_SET && [ -r "$ADR_DIR/NNNN-template.md" ]; then
+        TEMPLATE="$ADR_DIR/NNNN-template.md"
+        if grep -q '^## Status' "$TEMPLATE"; then ADR_LANG=en; else ADR_LANG=ko; fi
+    fi
+    [ -r "$TEMPLATE" ] || die "template not found: $TEMPLATE"
 }
 
 # Template with line 1 -> "# <title>" and the placeholder status line -> $2.
@@ -154,7 +171,7 @@ render() {
     ADR_T="$1" ADR_S="$2" awk '
         NR == 1 && /^# / { print "# " ENVIRON["ADR_T"]; next }
         !done && /^Accepted — YYYY-MM-DD/ { print ENVIRON["ADR_S"]; done = 1; next }
-        { print }' "$REF_DIR/template-$ADR_LANG.md"
+        { print }' "$TEMPLATE"
 }
 
 # stdin -> file on --apply; otherwise print the full planned content.
@@ -249,6 +266,9 @@ resolve_old() {
                 break
             fi
         done
+        if [ -n "$OLD_FILE" ] && [ -L "$OLD_FILE" ]; then
+            die "Refusing to rewrite a symlink: $OLD_REF -- nothing written"
+        fi
         if [ -n "$OLD_FILE" ] && ! basename -- "$OLD_FILE" | grep -Eq '^[0-9]{4}-.+\.md$'; then
             die "Not an NNNN-*.md ADR: $OLD_REF"
         fi
@@ -264,6 +284,9 @@ resolve_old() {
             _hits=$((_hits + 1))
             OLD_FILE="$_f"
         done
+        if [ -n "$OLD_FILE" ] && [ -L "$OLD_FILE" ]; then
+            die "Refusing to rewrite a symlink: $OLD_FILE -- nothing written"
+        fi
         if [ "$_hits" -gt 1 ]; then
             log_err "ADR number $_p is ambiguous (duplicate number) -- pass the file path instead"
             list_candidates
@@ -282,11 +305,17 @@ do_supersede() {
     [ -n "$OLD_REF" ] || die "supersede needs <old number|path> and a new title"
     [ -d "$ADR_DIR" ] || die "$ADR_DIR not found -- run scaffold first"
     resolve_old
-    prepare_new supersede
     _ob=$(basename -- "$OLD_FILE")
     _on=${_ob%%-*}
     _h=$(status_heading_line "$OLD_FILE")
     [ -n "$_h" ] || die "docs/adr/$_ob has no status section (## 상태 / ## Status) -- cannot record the supersession"
+    if status_section "$OLD_FILE" | grep -Eq ' 로 대체됨|Superseded by '; then
+        die "docs/adr/$_ob is already superseded -- supersede the newest ADR in the chain instead; nothing written"
+    fi
+    if $APPLY && [ ! -w "$OLD_FILE" ]; then die "docs/adr/$_ob is not writable -- nothing written"; fi
+    # Without --lang and a local template, the new ADR follows the old one's language.
+    if ! $LANG_SET && sed -n "${_h}p" "$OLD_FILE" | grep -q Status; then ADR_LANG=en; fi
+    prepare_new supersede
     if sed -n "${_h}p" "$OLD_FILE" | grep -q Status; then
         _old_line="Superseded by $NUM — $TODAY."
     else
@@ -297,23 +326,29 @@ do_supersede() {
     else
         _st="Accepted — $TODAY. $_on 을 대체한다."
     fi
-    # Insert after the last non-blank line of the status section.
-    _at=$(awk -v h="$_h" 'NR > h && /^## / { exit } NR > h && NF { l = NR } END { print (l ? l : h) }' "$OLD_FILE")
+    # Insert after the last non-blank line of the status section (a CR-only line is blank).
+    _at=$(awk -v h="$_h" '{ sub(/\r$/, "") } NR > h && /^## / { exit } NR > h && NF { l = NR } END { print (l ? l : h) }' "$OLD_FILE")
+    _cr=$(printf '\r')
+    case "$(sed -n "${_at}p" "$OLD_FILE")" in *"$_cr") _old_line="$_old_line$_cr" ;; esac
 
-    render "$TITLE" "$_st" | emit "$ADR_DIR/$NEW_FILE" "docs/adr/$NEW_FILE"
-    log_plan "modify" "docs/adr/$_ob (+1 line after line $_at, nothing else): $_old_line"
     if $APPLY; then
+        # Build the old ADR's new content first, so a failure here writes nothing at all.
         _tmp="$OLD_FILE.adr-bootstrap.$$"
+        _last=$(head -n "$_at" "$OLD_FILE" | tail -c 1)
         # head/tail keep every other byte, including a missing final newline
         {
             head -n "$_at" "$OLD_FILE"
-            [ -z "$(head -n "$_at" "$OLD_FILE" | tail -c 1)" ] || printf '\n'
+            [ -z "$_last" ] || printf '\n'
             printf '%s\n' "$_old_line"
             tail -n "+$((_at + 1))" "$OLD_FILE"
         } >"$_tmp" || {
             rm -f "$_tmp"
-            die "rewrite failed: $OLD_FILE"
+            die "rewrite failed: $OLD_FILE -- nothing written"
         }
+    fi
+    render "$TITLE" "$_st" | emit "$ADR_DIR/$NEW_FILE" "docs/adr/$NEW_FILE"
+    log_plan "modify" "docs/adr/$_ob (+1 line after line $_at, nothing else): $_old_line"
+    if $APPLY; then
         cat "$_tmp" >"$OLD_FILE" || die "write failed: $OLD_FILE (intended content left in $_tmp)"
         rm -f "$_tmp"
     fi
@@ -358,7 +393,10 @@ do_check() {
         elif ! printf '%s\n' "$_sec" | grep -q 'Accepted'; then
             finding "status section has no Accepted line: $_b"
         fi
-        _refs=$(printf '%s\n' "$_sec" | grep -oE '[0-9]{4} 로 대체됨|Superseded by [0-9]{4}' | grep -oE '[0-9]{4}' || true)
+        # Both directions: old -> new ("로 대체됨" / "Superseded by") and new -> old
+        # ("을 대체한다" / "Supersedes"). sed, not grep -o, to stay POSIX.
+        _refs=$(printf '%s\n' "$_sec" | sed -n -E -e 's/.*([0-9]{4}) 로 대체됨.*/\1/p' -e 's/.*Superseded by ([0-9]{4}).*/\1/p' \
+            -e 's/.*Supersedes ([0-9]{4}).*/\1/p' -e 's/.*([0-9]{4}) 을 대체한다.*/\1/p')
         for _r in $_refs; do
             _ok=false
             for _t in "$ADR_DIR/$_r"-*.md; do [ -f "$_t" ] && _ok=true; done
@@ -473,6 +511,32 @@ self_test() {
     diff -r "$ST/bad" "$ST/bad.orig" >/dev/null || bad "--check modified files"
     run "$ST/bad" new "Next one" --apply || bad "new beside non-NNNN file failed"
     [ -f "$ST/bad/docs/adr/0005-next-one.md" ] || bad "non-NNNN file affected numbering"
+    ok
+
+    # review fixes: local template, already-superseded, symlink, CRLF, cap, forward refs.
+    mkdir -p "$ST/loc/docs/adr"
+    printf '# T\n\n## Status\nAccepted — YYYY-MM-DD. (owner)\n\n## Team section\n' >"$ST/loc/docs/adr/NNNN-template.md"
+    run "$ST/loc" new "Local one" --apply || bad "new with local template failed"
+    grep -q '^## Team section' "$ST/loc/docs/adr/0001-local-one.md" || bad "local NNNN-template.md ignored"
+    grep -qx 'Accepted — 2026-01-02.' "$ST/loc/docs/adr/0001-local-one.md" || bad "local template status not rendered"
+    run "$ST/loc" supersede 1 "Local two" --apply || bad "supersede (en via local template) failed"
+    grep -qx 'Accepted — 2026-01-02. Supersedes 0001.' "$ST/loc/docs/adr/0002-local-two.md" || bad "en supersede line not used"
+    cp "$ST/loc/docs/adr/0001-local-one.md" "$ST/orig"
+    if run "$ST/loc" supersede 1 "Again" --apply; then bad "double supersede accepted"; fi
+    cmp -s "$ST/orig" "$ST/loc/docs/adr/0001-local-one.md" && [ ! -e "$ST/loc/docs/adr/0003-again.md" ] || bad "refused supersede wrote something"
+    ln -s "$ST/other/0001-x.md" "$ST/loc/docs/adr/0010-link.md"
+    if run "$ST/loc" supersede 10 "Via link" --apply; then bad "supersede through a symlink accepted"; fi
+    rm -f "$ST/loc/docs/adr/0010-link.md"
+    printf '# C\r\n\r\n## Status\r\nAccepted — 2025-01-01.\r\n\r\n## Context\r\nx\r\n' >"$ST/loc/docs/adr/0020-crlf.md"
+    run "$ST/loc" supersede 20 "After CRLF" --apply || bad "supersede on CRLF failed"
+    [ "$(sed -n 5p "$ST/loc/docs/adr/0020-crlf.md")" = "$(printf 'Superseded by 0021 — 2026-01-02.\r')" ] || bad "CRLF supersede line misplaced or LF-only"
+    printf '# F\n\n## Status\nAccepted — 2025-01-01. Supersedes 0077.\n' >"$ST/loc/docs/adr/0030-f.md"
+    if run "$ST/loc" --check; then bad "broken forward reference passed --check"; fi
+    grep -q 'broken supersede reference 0077' "$ST/out" || bad "--check missed forward ref 0077"
+    rm -f "$ST/loc/docs/adr/0030-f.md"
+    if run "$ST/loc" new "X" --check; then bad "--check combined with new accepted"; fi
+    printf '# M\n\n## Status\nAccepted — 2025-01-01.\n' >"$ST/loc/docs/adr/9999-max.md"
+    if run "$ST/loc" new "Overflow" --apply; then bad "numbering past 9999 accepted"; fi
     ok
 
     # error cases

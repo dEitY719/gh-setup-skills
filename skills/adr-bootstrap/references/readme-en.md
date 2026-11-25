@@ -12,7 +12,8 @@ An ADR is not a rule. It is the **record of a decision**: what was decided, and 
 ## File names and numbers
 
 - `NNNN-<kebab-slug>.md`. Four-digit numbers, starting at `0001`.
-- A new number is **the highest existing number + 1**. Never pick one by hand: parallel branches collide when they merge.
+- A new number is **the highest existing number + 1**. Never pick one by hand.
+- Two branches can still take the same next number. Run `--check` before merging a branch that adds an ADR.
 - If two ADRs end up sharing a number after a merge, the later one takes a new number.
 
 ## Skeleton
